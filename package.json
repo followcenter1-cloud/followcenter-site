@@ -1,0 +1,16 @@
+{
+  "name": "followcenter-site",
+  "version": "1.0.0",
+  "description": "FollowCenter.ir social media services panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.5.0",
+    "pg": "^8.13.1"
+  }
+}
