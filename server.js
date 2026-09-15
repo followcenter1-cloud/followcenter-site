@@ -21,11 +21,7 @@ const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'تعداد درخواست‌ها زیاد است. لطفاً کمی بعد دوباره تلاش کنید.'
-  }
+  legacyHeaders: false
 });
 
 app.use('/api/', apiLimiter);
@@ -81,27 +77,25 @@ const SERVICES = {
   ]
 };
 
-function normalizePhone(phone) {
-  return String(phone || '').trim();
+function findService(serviceId) {
+  for (const [network, items] of Object.entries(SERVICES)) {
+    for (const [id, name, price] of items) {
+      if (id === String(serviceId)) {
+        return { id, network, name, price };
+      }
+    }
+  }
+
+  return null;
 }
 
-function normalizeCode(code) {
-  return String(code || '').trim().toUpperCase();
-}
-
-function validServiceId(serviceId) {
-  return /^[a-z0-9_]{2,50}$/i.test(String(serviceId || ''));
+function validServiceId(id) {
+  return /^[a-z0-9_]{2,50}$/i.test(String(id || ''));
 }
 
 function validQuantity(quantity) {
   const q = Number(quantity);
   return Number.isInteger(q) && q >= 1 && q <= 10000000;
-}
-
-function validUrl(url) {
-  return typeof url === 'string' &&
-    url.trim().length >= 3 &&
-    url.trim().length <= 2000;
 }
 
 function validPhone(phone) {
@@ -110,26 +104,17 @@ function validPhone(phone) {
   );
 }
 
-function findService(serviceId) {
-  const wanted = String(serviceId || '');
-
-  for (const [network, items] of Object.entries(SERVICES)) {
-    for (const [id, name, price] of items) {
-      if (id === wanted) {
-        return {
-          id,
-          network,
-          name,
-          price
-        };
-      }
-    }
-  }
-
-  return null;
+function validUrl(url) {
+  return typeof url === 'string' &&
+    url.trim().length >= 3 &&
+    url.trim().length <= 2000;
 }
 
 async function initializeDatabase() {
+
+  /*
+   * USERS
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -138,18 +123,60 @@ async function initializeDatabase() {
     )
   `);
 
+  /*
+   * SERVICES
+   *
+   * اگر جدول قدیمی وجود داشته باشد، ستون‌های موردنیاز
+   * به آن اضافه می‌شوند.
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS services (
-      id SERIAL PRIMARY KEY,
-      service_code VARCHAR(100) UNIQUE NOT NULL,
-      network VARCHAR(50) NOT NULL,
-      name VARCHAR(255) NOT NULL,
-      price_per_1000 NUMERIC(14,2) NOT NULL,
-      active BOOLEAN DEFAULT TRUE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      id SERIAL PRIMARY KEY
     )
   `);
 
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS service_code VARCHAR(100)
+  `);
+
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS network VARCHAR(50)
+  `);
+
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS name VARCHAR(255)
+  `);
+
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS price_per_1000 NUMERIC(14,2)
+  `);
+
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE
+  `);
+
+  await pool.query(`
+    ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  /*
+   * مقدارهای NULL را برای جدول قدیمی اصلاح می‌کنیم.
+   */
+  await pool.query(`
+    UPDATE services
+    SET active = TRUE
+    WHERE active IS NULL
+  `);
+
+  /*
+   * ORDERS
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id SERIAL PRIMARY KEY,
@@ -166,6 +193,57 @@ async function initializeDatabase() {
     )
   `);
 
+  /*
+   * اگر orders از قبل وجود داشته باشد، ستون‌ها را اضافه می‌کنیم.
+   */
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS user_id INTEGER
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS service_id INTEGER
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS quantity INTEGER
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS link TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS phone VARCHAR(30)
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS notes TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS amount NUMERIC(14,2)
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'pending'
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  /*
+   * PAYMENTS
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
@@ -177,6 +255,9 @@ async function initializeDatabase() {
     )
   `);
 
+  /*
+   * AUDIT LOGS
+   */
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id SERIAL PRIMARY KEY,
@@ -186,29 +267,60 @@ async function initializeDatabase() {
     )
   `);
 
+  /*
+   * ساخت سرویس‌ها
+   */
   for (const [network, items] of Object.entries(SERVICES)) {
+
     for (const [serviceCode, name, price] of items) {
-      await pool.query(
+
+      const existing = await pool.query(
         `
-        INSERT INTO services
-          (service_code, network, name, price_per_1000)
-        VALUES
-          ($1::varchar, $2::varchar, $3::varchar, $4::numeric)
-        ON CONFLICT (service_code)
-        DO UPDATE SET
-          network = EXCLUDED.network,
-          name = EXCLUDED.name,
-          price_per_1000 = EXCLUDED.price_per_1000,
-          active = TRUE
+        SELECT id
+        FROM services
+        WHERE service_code = $1
+        LIMIT 1
         `,
-        [serviceCode, network, name, price]
+        [serviceCode]
       );
+
+      if (existing.rows.length) {
+
+        await pool.query(
+          `
+          UPDATE services
+          SET
+            network = $1,
+            name = $2,
+            price_per_1000 = $3,
+            active = TRUE
+          WHERE service_code = $4
+          `,
+          [network, name, price, serviceCode]
+        );
+
+      } else {
+
+        await pool.query(
+          `
+          INSERT INTO services
+            (service_code, network, name, price_per_1000, active)
+          VALUES
+            ($1, $2, $3, $4, TRUE)
+          `,
+          [serviceCode, network, name, price]
+        );
+
+      }
     }
   }
 
   console.log('Database initialized successfully.');
 }
 
+/*
+ * HOME
+ */
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -216,6 +328,9 @@ app.get('/', (req, res) => {
   });
 });
 
+/*
+ * API
+ */
 app.get('/api', (req, res) => {
   res.json({
     success: true,
@@ -223,15 +338,22 @@ app.get('/api', (req, res) => {
   });
 });
 
+/*
+ * HEALTH
+ */
 app.get('/api/health', async (req, res) => {
+
   try {
+
     await pool.query('SELECT 1');
 
     res.json({
       success: true,
       message: 'FollowCenter API and database are working'
     });
+
   } catch (error) {
+
     console.error('Health check failed:', error);
 
     res.status(500).json({
@@ -241,8 +363,13 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+/*
+ * SERVICES
+ */
 app.get('/api/services', async (req, res) => {
+
   try {
+
     const result = await pool.query(`
       SELECT
         service_code,
@@ -259,7 +386,9 @@ app.get('/api/services', async (req, res) => {
       success: true,
       services: result.rows
     });
+
   } catch (error) {
+
     console.error('Services error:', error);
 
     res.status(500).json({
@@ -269,7 +398,11 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
+/*
+ * CREATE ORDER
+ */
 app.post('/api/orders', async (req, res) => {
+
   const {
     serviceId,
     quantity,
@@ -299,7 +432,7 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  const cleanPhone = normalizePhone(phone);
+  const cleanPhone = String(phone || '').trim();
 
   if (!validPhone(cleanPhone)) {
     return res.status(400).json({
@@ -308,7 +441,7 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  if (notes !== undefined && String(notes).length > 2000) {
+  if (String(notes || '').length > 2000) {
     return res.status(400).json({
       success: false,
       message: 'توضیحات بیش از حد طولانی است.'
@@ -324,17 +457,19 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  const amount = (service.price * Number(quantity)) / 1000;
+  const amount =
+    service.price * Number(quantity) / 1000;
 
   const client = await pool.connect();
 
   try {
+
     await client.query('BEGIN');
 
     const userResult = await client.query(
       `
       INSERT INTO users (phone)
-      VALUES ($1::varchar)
+      VALUES ($1)
       ON CONFLICT (phone)
       DO UPDATE SET phone = EXCLUDED.phone
       RETURNING id
@@ -348,7 +483,7 @@ app.post('/api/orders', async (req, res) => {
       `
       SELECT id
       FROM services
-      WHERE service_code = $1::varchar
+      WHERE service_code = $1
         AND active = TRUE
       LIMIT 1
       `,
@@ -363,7 +498,8 @@ app.post('/api/orders', async (req, res) => {
 
     let orderCode = null;
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
+
       const candidate =
         'FC-' +
         Math.floor(100000 + Math.random() * 900000);
@@ -372,7 +508,7 @@ app.post('/api/orders', async (req, res) => {
         `
         SELECT id
         FROM orders
-        WHERE order_code = $1::varchar
+        WHERE order_code = $1
         LIMIT 1
         `,
         [candidate]
@@ -402,15 +538,15 @@ app.post('/api/orders', async (req, res) => {
         status
       )
       VALUES (
-        $1::varchar,
-        $2::integer,
-        $3::integer,
-        $4::integer,
-        $5::text,
-        $6::varchar,
-        $7::text,
-        $8::numeric,
-        $9::varchar
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9
       )
       RETURNING
         order_code,
@@ -443,31 +579,34 @@ app.post('/api/orders', async (req, res) => {
         date: orderResult.rows[0].created_at
       }
     });
+
   } catch (error) {
+
     await client.query('ROLLBACK');
 
     console.error('Create order error:', error);
 
-    if (error.message === 'SERVICE_NOT_FOUND') {
-      return res.status(404).json({
-        success: false,
-        message: 'سرویس فعال پیدا نشد.'
-      });
-    }
-
     res.status(500).json({
       success: false,
-      message: 'خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.'
+      message: 'خطا در ثبت سفارش.'
     });
+
   } finally {
+
     client.release();
   }
 });
 
+/*
+ * TRACK ORDER
+ */
 app.get('/api/orders/:code', async (req, res) => {
-  const code = normalizeCode(req.params.code);
+
+  const code =
+    String(req.params.code || '').trim().toUpperCase();
 
   if (!/^FC-\d{6}$/.test(code)) {
+
     return res.status(400).json({
       success: false,
       message: 'کد پیگیری معتبر نیست.'
@@ -475,6 +614,7 @@ app.get('/api/orders/:code', async (req, res) => {
   }
 
   try {
+
     const result = await pool.query(
       `
       SELECT
@@ -488,13 +628,14 @@ app.get('/api/orders/:code', async (req, res) => {
       FROM orders o
       JOIN services s
         ON s.id = o.service_id
-      WHERE o.order_code = $1::varchar
+      WHERE o.order_code = $1
       LIMIT 1
       `,
       [code]
     );
 
     if (!result.rows.length) {
+
       return res.status(404).json({
         success: false,
         message: 'سفارشی با این کد پیدا نشد.'
@@ -515,7 +656,9 @@ app.get('/api/orders/:code', async (req, res) => {
         date: order.created_at
       }
     });
+
   } catch (error) {
+
     console.error('Tracking error:', error);
 
     res.status(500).json({
@@ -525,31 +668,54 @@ app.get('/api/orders/:code', async (req, res) => {
   }
 });
 
+/*
+ * 404
+ */
 app.use((req, res) => {
+
   res.status(404).json({
     success: false,
     message: 'مسیر موردنظر پیدا نشد.'
   });
+
 });
 
+/*
+ * ERROR
+ */
 app.use((error, req, res, next) => {
+
   console.error('Unhandled error:', error);
 
   res.status(500).json({
     success: false,
     message: 'خطای داخلی سرور.'
   });
+
 });
 
+/*
+ * START
+ */
 async function startServer() {
+
   try {
+
     await initializeDatabase();
 
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`FollowCenter API running on port ${PORT}`);
+      console.log(
+        `FollowCenter API running on port ${PORT}`
+      );
     });
+
   } catch (error) {
-    console.error('Database initialization failed:', error);
+
+    console.error(
+      'Database initialization failed:',
+      error
+    );
+
     process.exit(1);
   }
 }
