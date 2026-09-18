@@ -33,6 +33,11 @@ const pool = new Pool({
     : false
 });
 
+
+/* =========================
+   SERVICES
+========================= */
+
 const SERVICES = {
   Instagram: [
     ['ig_follow', 'فالوور اینستاگرام', 150000],
@@ -77,11 +82,17 @@ const SERVICES = {
   ]
 };
 
+
 function findService(serviceId) {
   for (const [network, items] of Object.entries(SERVICES)) {
     for (const [id, name, price] of items) {
       if (id === String(serviceId)) {
-        return { id, network, name, price };
+        return {
+          id,
+          network,
+          name,
+          price
+        };
       }
     }
   }
@@ -89,13 +100,21 @@ function findService(serviceId) {
   return null;
 }
 
+
+/* =========================
+   VALIDATION
+========================= */
+
 function validServiceId(id) {
   return /^[a-z0-9_]{2,50}$/i.test(String(id || ''));
 }
 
 function validQuantity(quantity) {
   const q = Number(quantity);
-  return Number.isInteger(q) && q >= 1 && q <= 10000000;
+
+  return Number.isInteger(q) &&
+    q >= 1 &&
+    q <= 10000000;
 }
 
 function validPhone(phone) {
@@ -110,11 +129,15 @@ function validUrl(url) {
     url.trim().length <= 2000;
 }
 
+
+/* =========================
+   DATABASE INITIALIZATION
+========================= */
+
 async function initializeDatabase() {
 
-  /*
-   * USERS
-   */
+  /* USERS */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -123,12 +146,9 @@ async function initializeDatabase() {
     )
   `);
 
-  /*
-   * SERVICES
-   *
-   * اگر جدول قدیمی وجود داشته باشد، ستون‌های موردنیاز
-   * به آن اضافه می‌شوند.
-   */
+
+  /* SERVICES */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS services (
       id SERIAL PRIMARY KEY
@@ -165,18 +185,15 @@ async function initializeDatabase() {
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   `);
 
-  /*
-   * مقدارهای NULL را برای جدول قدیمی اصلاح می‌کنیم.
-   */
   await pool.query(`
     UPDATE services
     SET active = TRUE
     WHERE active IS NULL
   `);
 
-  /*
-   * ORDERS
-   */
+
+  /* ORDERS */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id SERIAL PRIMARY KEY,
@@ -184,7 +201,8 @@ async function initializeDatabase() {
       user_id INTEGER REFERENCES users(id),
       service_id INTEGER REFERENCES services(id),
       quantity INTEGER NOT NULL,
-      link TEXT NOT NULL,
+      link TEXT,
+      target_url TEXT,
       phone VARCHAR(30) NOT NULL,
       notes TEXT,
       amount NUMERIC(14,2) NOT NULL,
@@ -193,9 +211,6 @@ async function initializeDatabase() {
     )
   `);
 
-  /*
-   * اگر orders از قبل وجود داشته باشد، ستون‌ها را اضافه می‌کنیم.
-   */
   await pool.query(`
     ALTER TABLE orders
     ADD COLUMN IF NOT EXISTS user_id INTEGER
@@ -214,6 +229,11 @@ async function initializeDatabase() {
   await pool.query(`
     ALTER TABLE orders
     ADD COLUMN IF NOT EXISTS link TEXT
+  `);
+
+  await pool.query(`
+    ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS target_url TEXT
   `);
 
   await pool.query(`
@@ -241,9 +261,23 @@ async function initializeDatabase() {
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   `);
 
+
   /*
-   * PAYMENTS
+   * سازگاری با دیتابیس قدیمی
+   * اگر target_url برای سفارش‌های قدیمی خالی باشد،
+   * از link مقدار می‌گیرد.
    */
+
+  await pool.query(`
+    UPDATE orders
+    SET target_url = link
+    WHERE target_url IS NULL
+      AND link IS NOT NULL
+  `);
+
+
+  /* PAYMENTS */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,
@@ -255,9 +289,9 @@ async function initializeDatabase() {
     )
   `);
 
-  /*
-   * AUDIT LOGS
-   */
+
+  /* AUDIT LOGS */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id SERIAL PRIMARY KEY,
@@ -267,9 +301,9 @@ async function initializeDatabase() {
     )
   `);
 
-  /*
-   * ساخت سرویس‌ها
-   */
+
+  /* SEED SERVICES */
+
   for (const [network, items] of Object.entries(SERVICES)) {
 
     for (const [serviceCode, name, price] of items) {
@@ -296,7 +330,12 @@ async function initializeDatabase() {
             active = TRUE
           WHERE service_code = $4
           `,
-          [network, name, price, serviceCode]
+          [
+            network,
+            name,
+            price,
+            serviceCode
+          ]
         );
 
       } else {
@@ -304,11 +343,28 @@ async function initializeDatabase() {
         await pool.query(
           `
           INSERT INTO services
-            (service_code, network, name, price_per_1000, active)
+            (
+              service_code,
+              network,
+              name,
+              price_per_1000,
+              active
+            )
           VALUES
-            ($1, $2, $3, $4, TRUE)
+            (
+              $1,
+              $2,
+              $3,
+              $4,
+              TRUE
+            )
           `,
-          [serviceCode, network, name, price]
+          [
+            serviceCode,
+            network,
+            name,
+            price
+          ]
         );
 
       }
@@ -318,29 +374,39 @@ async function initializeDatabase() {
   console.log('Database initialized successfully.');
 }
 
-/*
- * HOME
- */
+
+/* =========================
+   HOME
+========================= */
+
 app.get('/', (req, res) => {
+
   res.json({
     success: true,
     message: 'FollowCenter API is running'
   });
+
 });
 
-/*
- * API
- */
+
+/* =========================
+   API
+========================= */
+
 app.get('/api', (req, res) => {
+
   res.json({
     success: true,
     message: 'FollowCenter API is running'
   });
+
 });
 
-/*
- * HEALTH
- */
+
+/* =========================
+   HEALTH
+========================= */
+
 app.get('/api/health', async (req, res) => {
 
   try {
@@ -354,18 +420,25 @@ app.get('/api/health', async (req, res) => {
 
   } catch (error) {
 
-    console.error('Health check failed:', error);
+    console.error(
+      'Health check failed:',
+      error
+    );
 
     res.status(500).json({
       success: false,
       message: 'Database connection failed'
     });
+
   }
+
 });
 
-/*
- * SERVICES
- */
+
+/* =========================
+   SERVICES API
+========================= */
+
 app.get('/api/services', async (req, res) => {
 
   try {
@@ -389,18 +462,25 @@ app.get('/api/services', async (req, res) => {
 
   } catch (error) {
 
-    console.error('Services error:', error);
+    console.error(
+      'Services error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
       message: 'خطا در دریافت سرویس‌ها'
     });
+
   }
+
 });
 
-/*
- * CREATE ORDER
- */
+
+/* =========================
+   CREATE ORDER
+========================= */
+
 app.post('/api/orders', async (req, res) => {
 
   const {
@@ -411,180 +491,283 @@ app.post('/api/orders', async (req, res) => {
     notes
   } = req.body || {};
 
+
+  /* VALIDATION */
+
   if (!validServiceId(serviceId)) {
+
     return res.status(400).json({
       success: false,
       message: 'سرویس انتخاب‌شده معتبر نیست.'
     });
+
   }
 
+
   if (!validQuantity(quantity)) {
+
     return res.status(400).json({
       success: false,
       message: 'تعداد واردشده معتبر نیست.'
     });
+
   }
 
+
   if (!validUrl(link)) {
+
     return res.status(400).json({
       success: false,
       message: 'لینک واردشده معتبر نیست.'
     });
+
   }
 
-  const cleanPhone = String(phone || '').trim();
+
+  const cleanPhone =
+    String(phone || '').trim();
+
 
   if (!validPhone(cleanPhone)) {
+
     return res.status(400).json({
       success: false,
       message: 'شماره موبایل معتبر نیست.'
     });
+
   }
 
+
   if (String(notes || '').length > 2000) {
+
     return res.status(400).json({
       success: false,
       message: 'توضیحات بیش از حد طولانی است.'
     });
+
   }
 
-  const service = findService(serviceId);
+
+  const service =
+    findService(serviceId);
+
 
   if (!service) {
+
     return res.status(404).json({
       success: false,
       message: 'سرویس پیدا نشد.'
     });
+
   }
 
-  const amount =
-    service.price * Number(quantity) / 1000;
 
-  const client = await pool.connect();
+  const amount =
+    service.price *
+    Number(quantity) /
+    1000;
+
+
+  const client =
+    await pool.connect();
+
 
   try {
 
     await client.query('BEGIN');
 
-    const userResult = await client.query(
-      `
-      INSERT INTO users (phone)
-      VALUES ($1)
-      ON CONFLICT (phone)
-      DO UPDATE SET phone = EXCLUDED.phone
-      RETURNING id
-      `,
-      [cleanPhone]
-    );
 
-    const userId = userResult.rows[0].id;
+    /* USER */
 
-    const serviceResult = await client.query(
-      `
-      SELECT id
-      FROM services
-      WHERE service_code = $1
-        AND active = TRUE
-      LIMIT 1
-      `,
-      [service.id]
-    );
+    const userResult =
+      await client.query(
+        `
+        INSERT INTO users (phone)
+        VALUES ($1)
+        ON CONFLICT (phone)
+        DO UPDATE SET phone = EXCLUDED.phone
+        RETURNING id
+        `,
+        [cleanPhone]
+      );
+
+
+    const userId =
+      userResult.rows[0].id;
+
+
+    /* SERVICE */
+
+    const serviceResult =
+      await client.query(
+        `
+        SELECT id
+        FROM services
+        WHERE service_code = $1
+          AND active = TRUE
+        LIMIT 1
+        `,
+        [service.id]
+      );
+
 
     if (!serviceResult.rows.length) {
-      throw new Error('SERVICE_NOT_FOUND');
+      throw new Error(
+        'SERVICE_NOT_FOUND'
+      );
     }
 
-    const serviceDbId = serviceResult.rows[0].id;
+
+    const serviceDbId =
+      serviceResult.rows[0].id;
+
+
+    /* ORDER CODE */
 
     let orderCode = null;
+
 
     for (let i = 0; i < 10; i++) {
 
       const candidate =
         'FC-' +
-        Math.floor(100000 + Math.random() * 900000);
+        Math.floor(
+          100000 +
+          Math.random() * 900000
+        );
 
-      const exists = await client.query(
-        `
-        SELECT id
-        FROM orders
-        WHERE order_code = $1
-        LIMIT 1
-        `,
-        [candidate]
-      );
+
+      const exists =
+        await client.query(
+          `
+          SELECT id
+          FROM orders
+          WHERE order_code = $1
+          LIMIT 1
+          `,
+          [candidate]
+        );
+
 
       if (!exists.rows.length) {
-        orderCode = candidate;
+
+        orderCode =
+          candidate;
+
         break;
+
       }
+
     }
+
 
     if (!orderCode) {
-      throw new Error('ORDER_CODE_FAILED');
+
+      throw new Error(
+        'ORDER_CODE_FAILED'
+      );
+
     }
 
-    const orderResult = await client.query(
-      `
-      INSERT INTO orders (
-        order_code,
-        user_id,
-        service_id,
-        quantity,
-        link,
-        phone,
-        notes,
-        amount,
-        status
-      )
-      VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        $9
-      )
-      RETURNING
-        order_code,
-        amount,
-        status,
-        created_at
-      `,
-      [
-        orderCode,
-        userId,
-        serviceDbId,
-        Number(quantity),
-        String(link).trim(),
-        cleanPhone,
-        notes ? String(notes).trim() : null,
-        amount,
-        'pending'
-      ]
+
+    /* INSERT ORDER */
+
+    const orderResult =
+      await client.query(
+        `
+        INSERT INTO orders (
+          order_code,
+          user_id,
+          service_id,
+          quantity,
+          link,
+          target_url,
+          phone,
+          notes,
+          amount,
+          status
+        )
+        VALUES (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9
+        )
+        RETURNING
+          order_code,
+          amount,
+          status,
+          created_at
+        `,
+        [
+          orderCode,
+          userId,
+          serviceDbId,
+          Number(quantity),
+          String(link).trim(),
+          cleanPhone,
+          notes
+            ? String(notes).trim()
+            : null,
+          amount,
+          'pending'
+        ]
+      );
+
+
+    await client.query(
+      'COMMIT'
     );
 
-    await client.query('COMMIT');
 
     res.status(201).json({
+
       success: true,
-      message: 'سفارش با موفقیت ثبت شد.',
+
+      message:
+        'سفارش با موفقیت ثبت شد.',
+
       order: {
-        code: orderResult.rows[0].order_code,
-        amount: Number(orderResult.rows[0].amount),
-        status: orderResult.rows[0].status,
-        date: orderResult.rows[0].created_at
+
+        code:
+          orderResult.rows[0]
+            .order_code,
+
+        amount:
+          Number(
+            orderResult.rows[0]
+              .amount
+          ),
+
+        status:
+          orderResult.rows[0]
+            .status,
+
+        date:
+          orderResult.rows[0]
+            .created_at
+
       }
+
     });
+
 
   } catch (error) {
 
-    await client.query('ROLLBACK');
+    await client.query(
+      'ROLLBACK'
+    );
 
-    console.error('Create order error:', error);
+    console.error(
+      'Create order error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -594,16 +777,25 @@ app.post('/api/orders', async (req, res) => {
   } finally {
 
     client.release();
+
   }
+
 });
 
-/*
- * TRACK ORDER
- */
+
+/* =========================
+   TRACK ORDER
+========================= */
+
 app.get('/api/orders/:code', async (req, res) => {
 
   const code =
-    String(req.params.code || '').trim().toUpperCase();
+    String(
+      req.params.code || ''
+    )
+      .trim()
+      .toUpperCase();
+
 
   if (!/^FC-\d{6}$/.test(code)) {
 
@@ -611,103 +803,156 @@ app.get('/api/orders/:code', async (req, res) => {
       success: false,
       message: 'کد پیگیری معتبر نیست.'
     });
+
   }
+
 
   try {
 
-    const result = await pool.query(
-      `
-      SELECT
-        o.order_code,
-        s.network,
-        s.name AS service,
-        o.quantity,
-        o.amount,
-        o.status,
-        o.created_at
-      FROM orders o
-      JOIN services s
-        ON s.id = o.service_id
-      WHERE o.order_code = $1
-      LIMIT 1
-      `,
-      [code]
-    );
+    const result =
+      await pool.query(
+        `
+        SELECT
+          o.order_code,
+          s.network,
+          s.name AS service,
+          o.quantity,
+          o.amount,
+          o.status,
+          o.created_at
+        FROM orders o
+        JOIN services s
+          ON s.id = o.service_id
+        WHERE o.order_code = $1
+        LIMIT 1
+        `,
+        [code]
+      );
+
 
     if (!result.rows.length) {
 
       return res.status(404).json({
         success: false,
-        message: 'سفارشی با این کد پیدا نشد.'
+        message:
+          'سفارشی با این کد پیدا نشد.'
       });
+
     }
 
-    const order = result.rows[0];
+
+    const order =
+      result.rows[0];
+
 
     res.json({
+
       success: true,
+
       order: {
-        code: order.order_code,
-        network: order.network,
-        service: order.service,
-        quantity: order.quantity,
-        amount: Number(order.amount),
-        status: order.status,
-        date: order.created_at
+
+        code:
+          order.order_code,
+
+        network:
+          order.network,
+
+        service:
+          order.service,
+
+        quantity:
+          order.quantity,
+
+        amount:
+          Number(order.amount),
+
+        status:
+          order.status,
+
+        date:
+          order.created_at
+
       }
+
     });
+
 
   } catch (error) {
 
-    console.error('Tracking error:', error);
+    console.error(
+      'Tracking error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: 'خطا در پیگیری سفارش.'
+      message:
+        'خطا در پیگیری سفارش.'
     });
+
   }
+
 });
 
-/*
- * 404
- */
+
+/* =========================
+   404
+========================= */
+
 app.use((req, res) => {
 
   res.status(404).json({
     success: false,
-    message: 'مسیر موردنظر پیدا نشد.'
+    message:
+      'مسیر موردنظر پیدا نشد.'
   });
 
 });
 
-/*
- * ERROR
- */
-app.use((error, req, res, next) => {
 
-  console.error('Unhandled error:', error);
+/* =========================
+   ERROR HANDLER
+========================= */
 
-  res.status(500).json({
-    success: false,
-    message: 'خطای داخلی سرور.'
-  });
+app.use(
+  (error, req, res, next) => {
 
-});
+    console.error(
+      'Unhandled error:',
+      error
+    );
 
-/*
- * START
- */
+    res.status(500).json({
+      success: false,
+      message:
+        'خطای داخلی سرور.'
+    });
+
+  }
+);
+
+
+/* =========================
+   START SERVER
+========================= */
+
 async function startServer() {
 
   try {
 
     await initializeDatabase();
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(
-        `FollowCenter API running on port ${PORT}`
-      );
-    });
+    app.listen(
+      PORT,
+      '0.0.0.0',
+      () => {
+
+        console.log(
+          `FollowCenter API running on port ${PORT}`
+        );
+
+      }
+    );
 
   } catch (error) {
 
@@ -717,7 +962,10 @@ async function startServer() {
     );
 
     process.exit(1);
+
   }
+
 }
+
 
 startServer();
