@@ -5,13 +5,27 @@ const rateLimit = require('express-rate-limit');
 const { Pool } = require('pg');
 
 const app = express();
-
 const PORT = process.env.PORT || 10000;
+
+/* =========================================================
+   DATABASE
+========================================================= */
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not configured.');
   process.exit(1);
 }
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000
+});
 
 /* =========================================================
    SECURITY
@@ -35,304 +49,105 @@ app.use(
       'https://followcenter-site.onrender.com'
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-    credentials: false
+    allowedHeaders: ['Content-Type']
   })
 );
 
-app.use(
-  express.json({
-    limit: '50kb'
-  })
-);
+app.use(express.json({ limit: '50kb' }));
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.'
-  }
+  legacyHeaders: false
 });
 
 app.use('/api/', apiLimiter);
-
-/* =========================================================
-   DATABASE
-========================================================= */
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
-  max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000
-});
 
 /* =========================================================
    SERVICES
 ========================================================= */
 
 const SERVICES = [
-  {
-    code: 'ig_follow',
-    network: 'instagram',
-    name: 'فالوور اینستاگرام',
-    price: 150000
-  },
-  {
-    code: 'ig_like',
-    network: 'instagram',
-    name: 'لایک اینستاگرام',
-    price: 30000
-  },
-  {
-    code: 'ig_view',
-    network: 'instagram',
-    name: 'ویو اینستاگرام',
-    price: 20000
-  },
-  {
-    code: 'ig_story_view',
-    network: 'instagram',
-    name: 'ویو استوری اینستاگرام',
-    price: 25000
-  },
-  {
-    code: 'ig_comment',
-    network: 'instagram',
-    name: 'کامنت اینستاگرام',
-    price: 80000
-  },
-  {
-    code: 'ig_save',
-    network: 'instagram',
-    name: 'سیو اینستاگرام',
-    price: 45000
-  },
-  {
-    code: 'ig_share',
-    network: 'instagram',
-    name: 'اشتراک‌گذاری اینستاگرام',
-    price: 45000
-  },
-  {
-    code: 'ig_story_like',
-    network: 'instagram',
-    name: 'لایک استوری اینستاگرام',
-    price: 35000
-  },
-  {
-    code: 'ig_live',
-    network: 'instagram',
-    name: 'بازدید لایو اینستاگرام',
-    price: 60000
-  },
-  {
-    code: 'ig_explore',
-    network: 'instagram',
-    name: 'اکسپلور اینستاگرام',
-    price: 70000
-  },
-  {
-    code: 'ig_impression',
-    network: 'instagram',
-    name: 'ایمپرشن اینستاگرام',
-    price: 30000
-  },
-  {
-    code: 'ig_poll',
-    network: 'instagram',
-    name: 'تعامل نظرسنجی اینستاگرام',
-    price: 50000
-  },
+  ['ig_follow', 'instagram', 'فالوور اینستاگرام', 150000],
+  ['ig_like', 'instagram', 'لایک اینستاگرام', 30000],
+  ['ig_view', 'instagram', 'ویو اینستاگرام', 20000],
+  ['ig_story_view', 'instagram', 'ویو استوری اینستاگرام', 25000],
+  ['ig_comment', 'instagram', 'کامنت اینستاگرام', 80000],
+  ['ig_save', 'instagram', 'سیو اینستاگرام', 45000],
+  ['ig_share', 'instagram', 'اشتراک‌گذاری اینستاگرام', 45000],
+  ['ig_story_like', 'instagram', 'لایک استوری اینستاگرام', 35000],
+  ['ig_live', 'instagram', 'بازدید لایو اینستاگرام', 60000],
+  ['ig_explore', 'instagram', 'اکسپلور اینستاگرام', 70000],
+  ['ig_impression', 'instagram', 'ایمپرشن اینستاگرام', 30000],
+  ['ig_poll', 'instagram', 'تعامل نظرسنجی اینستاگرام', 50000],
 
-  {
-    code: 'tg_channel',
-    network: 'telegram',
-    name: 'عضو کانال تلگرام',
-    price: 180000
-  },
-  {
-    code: 'tg_group',
-    network: 'telegram',
-    name: 'عضو گروه تلگرام',
-    price: 180000
-  },
-  {
-    code: 'tg_view',
-    network: 'telegram',
-    name: 'ویو تلگرام',
-    price: 25000
-  },
-  {
-    code: 'tg_story',
-    network: 'telegram',
-    name: 'ویو استوری تلگرام',
-    price: 30000
-  },
-  {
-    code: 'tg_reaction',
-    network: 'telegram',
-    name: 'ری‌اکشن تلگرام',
-    price: 35000
-  },
-  {
-    code: 'tg_like',
-    network: 'telegram',
-    name: 'لایک تلگرام',
-    price: 35000
-  },
-  {
-    code: 'tg_share',
-    network: 'telegram',
-    name: 'اشتراک‌گذاری تلگرام',
-    price: 30000
-  },
-  {
-    code: 'tg_ads',
-    network: 'telegram',
-    name: 'تبلیغات تلگرام',
-    price: 220000
-  },
-  {
-    code: 'tg_poll',
-    network: 'telegram',
-    name: 'نظرسنجی تلگرام',
-    price: 40000
-  },
-  {
-    code: 'tg_premium',
-    network: 'telegram',
-    name: 'عضو پریمیوم تلگرام',
-    price: 260000
-  },
+  ['tg_channel', 'telegram', 'عضو کانال تلگرام', 180000],
+  ['tg_group', 'telegram', 'عضو گروه تلگرام', 180000],
+  ['tg_view', 'telegram', 'ویو تلگرام', 25000],
+  ['tg_story', 'telegram', 'ویو استوری تلگرام', 30000],
+  ['tg_reaction', 'telegram', 'ری‌اکشن تلگرام', 35000],
+  ['tg_like', 'telegram', 'لایک تلگرام', 35000],
+  ['tg_share', 'telegram', 'اشتراک‌گذاری تلگرام', 30000],
+  ['tg_ads', 'telegram', 'تبلیغات تلگرام', 220000],
+  ['tg_poll', 'telegram', 'نظرسنجی تلگرام', 40000],
+  ['tg_premium', 'telegram', 'عضو پریمیوم تلگرام', 260000],
 
-  {
-    code: 'rb_follow',
-    network: 'rubika',
-    name: 'فالوور روبیکا',
-    price: 140000
-  },
-  {
-    code: 'rb_like',
-    network: 'rubika',
-    name: 'لایک روبیکا',
-    price: 30000
-  },
-  {
-    code: 'rb_view',
-    network: 'rubika',
-    name: 'ویو روبیکا',
-    price: 20000
-  },
+  ['rb_follow', 'rubika', 'فالوور روبیکا', 140000],
+  ['rb_like', 'rubika', 'لایک روبیکا', 30000],
+  ['rb_view', 'rubika', 'ویو روبیکا', 20000],
 
-  {
-    code: 'ea_channel',
-    network: 'eitaa',
-    name: 'عضو کانال ایتا',
-    price: 150000
-  },
-  {
-    code: 'ea_group',
-    network: 'eitaa',
-    name: 'عضو گروه ایتا',
-    price: 150000
-  },
-  {
-    code: 'ea_view',
-    network: 'eitaa',
-    name: 'ویو ایتا',
-    price: 20000
-  },
-  {
-    code: 'ea_ads',
-    network: 'eitaa',
-    name: 'تبلیغات ایتا',
-    price: 250000
-  },
-  {
-    code: 'ea_directory',
-    network: 'eitaa',
-    name: 'ثبت در فهرست ایتا',
-    price: 80000
-  }
+  ['ea_channel', 'eitaa', 'عضو کانال ایتا', 150000],
+  ['ea_group', 'eitaa', 'عضو گروه ایتا', 150000],
+  ['ea_view', 'eitaa', 'ویو ایتا', 20000],
+  ['ea_ads', 'eitaa', 'تبلیغات ایتا', 250000],
+  ['ea_directory', 'eitaa', 'ثبت در فهرست ایتا', 80000]
 ];
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function cleanString(value, maxLength = 2000) {
-  if (value === undefined || value === null) {
-    return '';
-  }
-
-  return String(value)
-    .trim()
-    .slice(0, maxLength);
+function cleanString(value, max = 2000) {
+  if (value === undefined || value === null) return '';
+  return String(value).trim().slice(0, max);
 }
 
 function cleanPhone(value) {
   return cleanString(value, 30).replace(/[^\d+]/g, '');
 }
 
-function isValidUrl(value) {
+function validUrl(value) {
   try {
-    const url = new URL(value);
-
-    return (
-      url.protocol === 'http:' ||
-      url.protocol === 'https:'
-    );
+    const u = new URL(value);
+    return u.protocol === 'http:' || u.protocol === 'https:';
   } catch {
     return false;
   }
 }
 
-function isValidQuantity(value) {
-  const quantity = Number(value);
-
-  return (
-    Number.isInteger(quantity) &&
-    quantity >= 1 &&
-    quantity <= 100000000
-  );
+function validQuantity(value) {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 100000000;
 }
 
-function generateOrderCode() {
-  const number = Math.floor(
-    100000 + Math.random() * 900000
-  );
-
-  return `FC-${number}`;
+function makeOrderCode() {
+  return `FC-${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
-async function generateUniqueOrderCode() {
-  for (let i = 0; i < 10; i++) {
-    const code = generateOrderCode();
+async function uniqueOrderCode() {
+  for (let i = 0; i < 20; i++) {
+    const code = makeOrderCode();
 
     const result = await pool.query(
-      `
-      SELECT id
-      FROM orders
-      WHERE order_code = $1
-      LIMIT 1
-      `,
+      `SELECT id FROM orders WHERE order_code = $1 LIMIT 1`,
       [code]
     );
 
-    if (result.rowCount === 0) {
-      return code;
-    }
+    if (result.rowCount === 0) return code;
   }
 
-  throw new Error('Could not generate unique order code.');
+  throw new Error('Could not create unique order code.');
 }
 
 /* =========================================================
@@ -350,7 +165,7 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        phone VARCHAR(30) UNIQUE,
+        phone VARCHAR(30),
         email VARCHAR(255),
         password_hash TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -366,11 +181,14 @@ async function initializeDatabase() {
         network VARCHAR(50),
         name TEXT,
         price NUMERIC(14,2) DEFAULT 0,
+        price_per_1000 NUMERIC(14,2) DEFAULT 0,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    /* اضافه کردن ستون‌های قدیمی/جدید */
 
     await client.query(`
       ALTER TABLE services
@@ -394,12 +212,38 @@ async function initializeDatabase() {
 
     await client.query(`
       ALTER TABLE services
+      ADD COLUMN IF NOT EXISTS price_per_1000 NUMERIC(14,2) DEFAULT 0
+    `);
+
+    await client.query(`
+      ALTER TABLE services
       ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE
     `);
 
     await client.query(`
       ALTER TABLE services
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+
+    await client.query(`
+      ALTER TABLE services
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+
+    /* مقداردهی ستون‌های قیمت */
+
+    await client.query(`
+      UPDATE services
+      SET price = price_per_1000
+      WHERE price IS NULL
+        AND price_per_1000 IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE services
+      SET price_per_1000 = price
+      WHERE price_per_1000 IS NULL
+        AND price IS NOT NULL
     `);
 
     /* ORDERS */
@@ -474,7 +318,7 @@ async function initializeDatabase() {
 
     await client.query(`
       ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS status VARCHAR(50)
+      ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending'
     `);
 
     await client.query(`
@@ -482,14 +326,7 @@ async function initializeDatabase() {
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
-    /* Compatibility fixes */
-
-    await client.query(`
-      UPDATE orders
-      SET target_url = link
-      WHERE target_url IS NULL
-        AND link IS NOT NULL
-    `);
+    /* هماهنگ کردن قیمت‌های قدیمی */
 
     await client.query(`
       UPDATE orders
@@ -503,6 +340,13 @@ async function initializeDatabase() {
       SET total_price = amount
       WHERE total_price IS NULL
         AND amount IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
+      SET target_url = link
+      WHERE target_url IS NULL
+        AND link IS NOT NULL
     `);
 
     await client.query(`
@@ -539,12 +383,19 @@ async function initializeDatabase() {
       )
     `);
 
-    /* SERVICE CATALOG
+    /* =====================================================
+       SERVICE SEED
        بدون ON CONFLICT
-       تا با دیتابیس قدیمی هم سازگار باشد.
-    */
+    ===================================================== */
 
     for (const service of SERVICES) {
+      const [
+        code,
+        network,
+        name,
+        price
+      ] = service;
+
       const existing = await client.query(
         `
         SELECT id
@@ -553,7 +404,7 @@ async function initializeDatabase() {
         ORDER BY id ASC
         LIMIT 1
         `,
-        [service.code]
+        [code]
       );
 
       if (existing.rowCount > 0) {
@@ -564,14 +415,15 @@ async function initializeDatabase() {
             network = $1,
             name = $2,
             price = $3,
+            price_per_1000 = $3,
             is_active = TRUE,
             updated_at = CURRENT_TIMESTAMP
           WHERE id = $4
           `,
           [
-            service.network,
-            service.name,
-            service.price,
+            network,
+            name,
+            price,
             existing.rows[0].id
           ]
         );
@@ -583,7 +435,9 @@ async function initializeDatabase() {
             network,
             name,
             price,
+            price_per_1000,
             is_active,
+            created_at,
             updated_at
           )
           VALUES (
@@ -591,15 +445,17 @@ async function initializeDatabase() {
             $2,
             $3,
             $4,
+            $4,
             TRUE,
+            CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP
           )
           `,
           [
-            service.code,
-            service.network,
-            service.name,
-            service.price
+            code,
+            network,
+            name,
+            price
           ]
         );
       }
@@ -625,7 +481,7 @@ async function initializeDatabase() {
 }
 
 /* =========================================================
-   BASIC ROUTES
+   BASIC API
 ========================================================= */
 
 app.get('/', (req, res) => {
@@ -654,10 +510,7 @@ app.get('/api/health', async (req, res) => {
       database: 'connected'
     });
   } catch (error) {
-    console.error(
-      'Health check failed:',
-      error
-    );
+    console.error('Health error:', error);
 
     res.status(503).json({
       success: false,
@@ -668,7 +521,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 /* =========================================================
-   SERVICES
+   SERVICES API
 ========================================================= */
 
 app.get('/api/services', async (req, res) => {
@@ -680,6 +533,7 @@ app.get('/api/services', async (req, res) => {
         network,
         name,
         price,
+        price_per_1000,
         is_active
       FROM services
       WHERE is_active = TRUE
@@ -691,10 +545,7 @@ app.get('/api/services', async (req, res) => {
       services: result.rows
     });
   } catch (error) {
-    console.error(
-      'Services error:',
-      error
-    );
+    console.error('Services error:', error);
 
     res.status(500).json({
       success: false,
@@ -710,13 +561,8 @@ app.get('/api/services', async (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
   try {
-    const serviceId = Number(
-      req.body.serviceId
-    );
-
-    const quantity = Number(
-      req.body.quantity
-    );
+    const serviceId = Number(req.body.serviceId);
+    const quantity = Number(req.body.quantity);
 
     const link = cleanString(
       req.body.link,
@@ -742,27 +588,21 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    if (!isValidQuantity(quantity)) {
+    if (!validQuantity(quantity)) {
       return res.status(400).json({
         success: false,
         message: 'تعداد سفارش معتبر نیست.'
       });
     }
 
-    if (
-      !link ||
-      !isValidUrl(link)
-    ) {
+    if (!link || !validUrl(link)) {
       return res.status(400).json({
         success: false,
         message: 'لینک واردشده معتبر نیست.'
       });
     }
 
-    if (
-      !phone ||
-      phone.length < 8
-    ) {
+    if (!phone || phone.length < 8) {
       return res.status(400).json({
         success: false,
         message: 'شماره تماس معتبر نیست.'
@@ -776,7 +616,7 @@ app.post('/api/orders', async (req, res) => {
         service_code,
         network,
         name,
-        price
+        COALESCE(price, price_per_1000, 0) AS unit_price
       FROM services
       WHERE id = $1
         AND is_active = TRUE
@@ -795,11 +635,11 @@ app.post('/api/orders', async (req, res) => {
     const service = serviceResult.rows[0];
 
     const unitPrice = Number(
-      service.price
+      service.unit_price
     );
 
     const totalPrice = Math.round(
-      (unitPrice * quantity) / 1000
+      unitPrice * quantity / 1000
     );
 
     if (
@@ -813,9 +653,7 @@ app.post('/api/orders', async (req, res) => {
     }
 
     const orderCode =
-      await generateUniqueOrderCode();
-
-    const userId = null;
+      await uniqueOrderCode();
 
     const result = await pool.query(
       `
@@ -834,25 +672,22 @@ app.post('/api/orders', async (req, res) => {
       )
       VALUES (
         $1,
+        NULL,
         $2,
         $3,
         $4,
-        $5,
+        $4,
         $5,
         $6,
         $7,
-        $8,
-        $8,
-        $9
+        $7,
+        'pending'
       )
       RETURNING
         id,
         order_code,
         service_id,
         quantity,
-        link,
-        phone,
-        notes,
         amount,
         total_price,
         status,
@@ -860,21 +695,19 @@ app.post('/api/orders', async (req, res) => {
       `,
       [
         orderCode,
-        userId,
         service.id,
         quantity,
         link,
         phone,
         notes || null,
-        totalPrice,
-        'pending'
+        totalPrice
       ]
     );
 
     const order = result.rows[0];
 
     console.log(
-      `Order created successfully: ${order.order_code}`
+      `Order created: ${order.order_code}`
     );
 
     res.status(201).json({
@@ -925,8 +758,7 @@ app.get('/api/orders/:code', async (req, res) => {
       SELECT
         o.order_code,
         o.quantity,
-        o.amount,
-        o.total_price,
+        COALESCE(o.amount, o.total_price, 0) AS amount,
         o.status,
         o.created_at,
         s.name AS service_name,
@@ -949,11 +781,6 @@ app.get('/api/orders/:code', async (req, res) => {
 
     const order = result.rows[0];
 
-    const amount =
-      order.amount !== null
-        ? Number(order.amount)
-        : Number(order.total_price || 0);
-
     res.json({
       success: true,
       order: {
@@ -961,7 +788,7 @@ app.get('/api/orders/:code', async (req, res) => {
         service: order.service_name,
         network: order.network,
         quantity: order.quantity,
-        amount,
+        amount: Number(order.amount),
         status: order.status,
         createdAt: order.created_at
       }
@@ -991,29 +818,7 @@ app.use((req, res) => {
 });
 
 /* =========================================================
-   GLOBAL ERROR HANDLER
-========================================================= */
-
-app.use(
-  (error, req, res, next) => {
-    console.error(
-      'Unhandled API error:',
-      error
-    );
-
-    if (res.headersSent) {
-      return next(error);
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'خطای داخلی سرور.'
-    });
-  }
-);
-
-/* =========================================================
-   START
+   START SERVER
 ========================================================= */
 
 async function startServer() {
