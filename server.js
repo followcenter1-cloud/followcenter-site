@@ -53,7 +53,11 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '50kb' }));
+app.use(
+  express.json({
+    limit: '50kb'
+  })
+);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -109,7 +113,10 @@ const SERVICES = [
 ========================================================= */
 
 function cleanString(value, max = 2000) {
-  if (value === undefined || value === null) return '';
+  if (value === undefined || value === null) {
+    return '';
+  }
+
   return String(value).trim().slice(0, max);
 }
 
@@ -119,20 +126,31 @@ function cleanPhone(value) {
 
 function validUrl(value) {
   try {
-    const u = new URL(value);
-    return u.protocol === 'http:' || u.protocol === 'https:';
+    const url = new URL(value);
+
+    return (
+      url.protocol === 'http:' ||
+      url.protocol === 'https:'
+    );
   } catch {
     return false;
   }
 }
 
 function validQuantity(value) {
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 1 && n <= 100000000;
+  const quantity = Number(value);
+
+  return (
+    Number.isInteger(quantity) &&
+    quantity >= 1 &&
+    quantity <= 100000000
+  );
 }
 
 function makeOrderCode() {
-  return `FC-${Math.floor(100000 + Math.random() * 900000)}`;
+  return `FC-${Math.floor(
+    100000 + Math.random() * 900000
+  )}`;
 }
 
 async function uniqueOrderCode() {
@@ -140,14 +158,23 @@ async function uniqueOrderCode() {
     const code = makeOrderCode();
 
     const result = await pool.query(
-      `SELECT id FROM orders WHERE order_code = $1 LIMIT 1`,
+      `
+      SELECT id
+      FROM orders
+      WHERE order_code = $1
+      LIMIT 1
+      `,
       [code]
     );
 
-    if (result.rowCount === 0) return code;
+    if (result.rowCount === 0) {
+      return code;
+    }
   }
 
-  throw new Error('Could not create unique order code.');
+  throw new Error(
+    'Could not generate unique order code.'
+  );
 }
 
 /* =========================================================
@@ -188,8 +215,6 @@ async function initializeDatabase() {
       )
     `);
 
-    /* اضافه کردن ستون‌های قدیمی/جدید */
-
     await client.query(`
       ALTER TABLE services
       ADD COLUMN IF NOT EXISTS service_code VARCHAR(100)
@@ -228,22 +253,6 @@ async function initializeDatabase() {
     await client.query(`
       ALTER TABLE services
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `);
-
-    /* مقداردهی ستون‌های قیمت */
-
-    await client.query(`
-      UPDATE services
-      SET price = price_per_1000
-      WHERE price IS NULL
-        AND price_per_1000 IS NOT NULL
-    `);
-
-    await client.query(`
-      UPDATE services
-      SET price_per_1000 = price
-      WHERE price_per_1000 IS NULL
-        AND price IS NOT NULL
     `);
 
     /* ORDERS */
@@ -326,35 +335,6 @@ async function initializeDatabase() {
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
-    /* هماهنگ کردن قیمت‌های قدیمی */
-
-    await client.query(`
-      UPDATE orders
-      SET amount = total_price
-      WHERE amount IS NULL
-        AND total_price IS NOT NULL
-    `);
-
-    await client.query(`
-      UPDATE orders
-      SET total_price = amount
-      WHERE total_price IS NULL
-        AND amount IS NOT NULL
-    `);
-
-    await client.query(`
-      UPDATE orders
-      SET target_url = link
-      WHERE target_url IS NULL
-        AND link IS NOT NULL
-    `);
-
-    await client.query(`
-      UPDATE orders
-      SET status = 'pending'
-      WHERE status IS NULL
-    `);
-
     /* PAYMENTS */
 
     await client.query(`
@@ -384,17 +364,64 @@ async function initializeDatabase() {
     `);
 
     /* =====================================================
-       SERVICE SEED
-       بدون ON CONFLICT
+       DATA COMPATIBILITY
+    ===================================================== */
+
+    await client.query(`
+      UPDATE services
+      SET price = price_per_1000
+      WHERE price IS NULL
+        AND price_per_1000 IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE services
+      SET price_per_1000 = price
+      WHERE price_per_1000 IS NULL
+        AND price IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
+      SET target_url = link
+      WHERE target_url IS NULL
+        AND link IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
+      SET amount = total_price
+      WHERE amount IS NULL
+        AND total_price IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
+      SET total_price = amount
+      WHERE total_price IS NULL
+        AND amount IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
+      SET status = 'pending'
+      WHERE status IS NULL
+    `);
+
+    /* =====================================================
+       SERVICE CATALOG
+
+       مهم:
+       price و price_per_1000 ممکن است در دیتابیس
+       نوع‌های متفاوت داشته باشند.
+       بنابراین هر کدام جداگانه CAST می‌شوند.
     ===================================================== */
 
     for (const service of SERVICES) {
-      const [
-        code,
-        network,
-        name,
-        price
-      ] = service;
+      const code = service[0];
+      const network = service[1];
+      const name = service[2];
+      const price = service[3];
 
       const existing = await client.query(
         `
@@ -414,8 +441,8 @@ async function initializeDatabase() {
           SET
             network = $1,
             name = $2,
-            price = $3,
-            price_per_1000 = $3,
+            price = $3::numeric,
+            price_per_1000 = $3::bigint,
             is_active = TRUE,
             updated_at = CURRENT_TIMESTAMP
           WHERE id = $4
@@ -444,8 +471,8 @@ async function initializeDatabase() {
             $1,
             $2,
             $3,
-            $4,
-            $4,
+            $4::numeric,
+            $4::bigint,
             TRUE,
             CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP
@@ -495,7 +522,8 @@ app.get('/', (req, res) => {
 app.get('/api', (req, res) => {
   res.json({
     success: true,
-    message: 'FollowCenter API and database are working.',
+    message:
+      'FollowCenter API and database are working.',
     status: 'online'
   });
 });
@@ -510,7 +538,10 @@ app.get('/api/health', async (req, res) => {
       database: 'connected'
     });
   } catch (error) {
-    console.error('Health error:', error);
+    console.error(
+      'Health check error:',
+      error
+    );
 
     res.status(503).json({
       success: false,
@@ -545,7 +576,10 @@ app.get('/api/services', async (req, res) => {
       services: result.rows
     });
   } catch (error) {
-    console.error('Services error:', error);
+    console.error(
+      'Services error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -561,8 +595,13 @@ app.get('/api/services', async (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
   try {
-    const serviceId = Number(req.body.serviceId);
-    const quantity = Number(req.body.quantity);
+    const serviceId = Number(
+      req.body.serviceId
+    );
+
+    const quantity = Number(
+      req.body.quantity
+    );
 
     const link = cleanString(
       req.body.link,
@@ -584,62 +623,72 @@ app.post('/api/orders', async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: 'سرویس انتخاب‌شده معتبر نیست.'
+        message:
+          'سرویس انتخاب‌شده معتبر نیست.'
       });
     }
 
     if (!validQuantity(quantity)) {
       return res.status(400).json({
         success: false,
-        message: 'تعداد سفارش معتبر نیست.'
+        message:
+          'تعداد سفارش معتبر نیست.'
       });
     }
 
     if (!link || !validUrl(link)) {
       return res.status(400).json({
         success: false,
-        message: 'لینک واردشده معتبر نیست.'
+        message:
+          'لینک واردشده معتبر نیست.'
       });
     }
 
     if (!phone || phone.length < 8) {
       return res.status(400).json({
         success: false,
-        message: 'شماره تماس معتبر نیست.'
+        message:
+          'شماره تماس معتبر نیست.'
       });
     }
 
-    const serviceResult = await pool.query(
-      `
-      SELECT
-        id,
-        service_code,
-        network,
-        name,
-        COALESCE(price, price_per_1000, 0) AS unit_price
-      FROM services
-      WHERE id = $1
-        AND is_active = TRUE
-      LIMIT 1
-      `,
-      [serviceId]
-    );
+    const serviceResult =
+      await pool.query(
+        `
+        SELECT
+          id,
+          service_code,
+          network,
+          name,
+          COALESCE(
+            price::numeric,
+            price_per_1000::numeric,
+            0::numeric
+          ) AS unit_price
+        FROM services
+        WHERE id = $1
+          AND is_active = TRUE
+        LIMIT 1
+        `,
+        [serviceId]
+      );
 
     if (serviceResult.rowCount === 0) {
       return res.status(404).json({
         success: false,
-        message: 'سرویس پیدا نشد یا غیرفعال است.'
+        message:
+          'سرویس پیدا نشد یا غیرفعال است.'
       });
     }
 
-    const service = serviceResult.rows[0];
+    const service =
+      serviceResult.rows[0];
 
-    const unitPrice = Number(
-      service.unit_price
-    );
+    const unitPrice =
+      Number(service.unit_price);
 
     const totalPrice = Math.round(
-      unitPrice * quantity / 1000
+      (unitPrice * quantity) / 1000
     );
 
     if (
@@ -648,78 +697,83 @@ app.post('/api/orders', async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: 'قیمت سفارش معتبر نیست.'
+        message:
+          'قیمت سفارش معتبر نیست.'
       });
     }
 
     const orderCode =
       await uniqueOrderCode();
 
-    const result = await pool.query(
-      `
-      INSERT INTO orders (
-        order_code,
-        user_id,
-        service_id,
-        quantity,
-        link,
-        target_url,
-        phone,
-        notes,
-        amount,
-        total_price,
-        status
-      )
-      VALUES (
-        $1,
-        NULL,
-        $2,
-        $3,
-        $4,
-        $4,
-        $5,
-        $6,
-        $7,
-        $7,
-        'pending'
-      )
-      RETURNING
-        id,
-        order_code,
-        service_id,
-        quantity,
-        amount,
-        total_price,
-        status,
-        created_at
-      `,
-      [
-        orderCode,
-        service.id,
-        quantity,
-        link,
-        phone,
-        notes || null,
-        totalPrice
-      ]
-    );
+    const result =
+      await pool.query(
+        `
+        INSERT INTO orders (
+          order_code,
+          user_id,
+          service_id,
+          quantity,
+          link,
+          target_url,
+          phone,
+          notes,
+          amount,
+          total_price,
+          status
+        )
+        VALUES (
+          $1,
+          NULL,
+          $2,
+          $3,
+          $4,
+          $4,
+          $5,
+          $6,
+          $7::numeric,
+          $7::numeric,
+          'pending'
+        )
+        RETURNING
+          id,
+          order_code,
+          service_id,
+          quantity,
+          amount,
+          total_price,
+          status,
+          created_at
+        `,
+        [
+          orderCode,
+          service.id,
+          quantity,
+          link,
+          phone,
+          notes || null,
+          totalPrice
+        ]
+      );
 
-    const order = result.rows[0];
+    const order =
+      result.rows[0];
 
     console.log(
-      `Order created: ${order.order_code}`
+      `Order created successfully: ${order.order_code}`
     );
 
     res.status(201).json({
       success: true,
-      message: 'سفارش با موفقیت ثبت شد.',
+      message:
+        'سفارش با موفقیت ثبت شد.',
       order: {
         code: order.order_code,
         service: service.name,
         quantity: order.quantity,
         amount: Number(order.amount),
         status: order.status,
-        createdAt: order.created_at
+        createdAt:
+          order.created_at
       }
     });
   } catch (error) {
@@ -730,7 +784,8 @@ app.post('/api/orders', async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'ثبت سفارش انجام نشد. لطفاً دوباره تلاش کنید.'
+      message:
+        'ثبت سفارش انجام نشد. لطفاً دوباره تلاش کنید.'
     });
   }
 });
@@ -739,72 +794,94 @@ app.post('/api/orders', async (req, res) => {
    TRACK ORDER
 ========================================================= */
 
-app.get('/api/orders/:code', async (req, res) => {
-  try {
-    const code = cleanString(
-      req.params.code,
-      50
-    ).toUpperCase();
+app.get(
+  '/api/orders/:code',
+  async (req, res) => {
+    try {
+      const code =
+        cleanString(
+          req.params.code,
+          50
+        ).toUpperCase();
 
-    if (!/^FC-\d{6}$/.test(code)) {
-      return res.status(400).json({
-        success: false,
-        message: 'کد سفارش معتبر نیست.'
-      });
-    }
-
-    const result = await pool.query(
-      `
-      SELECT
-        o.order_code,
-        o.quantity,
-        COALESCE(o.amount, o.total_price, 0) AS amount,
-        o.status,
-        o.created_at,
-        s.name AS service_name,
-        s.network
-      FROM orders o
-      LEFT JOIN services s
-        ON s.id = o.service_id
-      WHERE o.order_code = $1
-      LIMIT 1
-      `,
-      [code]
-    );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'سفارشی با این کد پیدا نشد.'
-      });
-    }
-
-    const order = result.rows[0];
-
-    res.json({
-      success: true,
-      order: {
-        code: order.order_code,
-        service: order.service_name,
-        network: order.network,
-        quantity: order.quantity,
-        amount: Number(order.amount),
-        status: order.status,
-        createdAt: order.created_at
+      if (
+        !/^FC-\d{6}$/.test(code)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'کد سفارش معتبر نیست.'
+        });
       }
-    });
-  } catch (error) {
-    console.error(
-      'Tracking error:',
-      error
-    );
 
-    res.status(500).json({
-      success: false,
-      message: 'خطا در پیگیری سفارش.'
-    });
+      const result =
+        await pool.query(
+          `
+          SELECT
+            o.order_code,
+            o.quantity,
+            COALESCE(
+              o.amount::numeric,
+              o.total_price::numeric,
+              0::numeric
+            ) AS amount,
+            o.status,
+            o.created_at,
+            s.name AS service_name,
+            s.network
+          FROM orders o
+          LEFT JOIN services s
+            ON s.id = o.service_id
+          WHERE o.order_code = $1
+          LIMIT 1
+          `,
+          [code]
+        );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            'سفارشی با این کد پیدا نشد.'
+        });
+      }
+
+      const order =
+        result.rows[0];
+
+      res.json({
+        success: true,
+        order: {
+          code:
+            order.order_code,
+          service:
+            order.service_name,
+          network:
+            order.network,
+          quantity:
+            order.quantity,
+          amount:
+            Number(order.amount),
+          status:
+            order.status,
+          createdAt:
+            order.created_at
+        }
+      });
+    } catch (error) {
+      console.error(
+        'Tracking error:',
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          'خطا در پیگیری سفارش.'
+      });
+    }
   }
-});
+);
 
 /* =========================================================
    404
@@ -813,12 +890,13 @@ app.get('/api/orders/:code', async (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'مسیر موردنظر پیدا نشد.'
+    message:
+      'مسیر موردنظر پیدا نشد.'
   });
 });
 
 /* =========================================================
-   START SERVER
+   START
 ========================================================= */
 
 async function startServer() {
