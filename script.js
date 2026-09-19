@@ -10,7 +10,7 @@ const SERVICES = {
       ['ig_story_view', 'ویو استوری اینستاگرام', 25000],
       ['ig_comment', 'کامنت اینستاگرام', 80000],
       ['ig_save', 'سیو پست اینستاگرام', 45000],
-      ['ig_share', 'اشتراک‌گذاری پست اینستاگرام', 40000],
+      ['ig_share', 'اشتراک‌گذاری پست اینستاگرام', 45000],
       ['ig_story_like', 'لایک استوری اینستاگرام', 35000],
       ['ig_live', 'لایک و بازدید لایو اینستاگرام', 60000],
       ['ig_explore', 'خدمات اکسپلور اینستاگرام', 70000],
@@ -66,8 +66,13 @@ const allServices = Object.entries(SERVICES).flatMap(
     }))
 );
 
+let API_SERVICES = [];
+let API_SERVICES_LOADED = false;
+
 const fmt = n =>
-  new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان';
+  new Intl.NumberFormat('fa-IR').format(
+    Math.round(Number(n) || 0)
+  ) + ' تومان';
 
 function toast(msg) {
   const el = document.querySelector('#toast');
@@ -85,58 +90,175 @@ function toast(msg) {
   }, 2800);
 }
 
+/*
+ * دریافت سرویس‌های واقعی از API
+ *
+ * مثال:
+ * tg_channel
+ * تبدیل می‌شود به:
+ * id = 13
+ */
+async function loadApiServices() {
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/services`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('دریافت سرویس‌ها ناموفق بود.');
+    }
+
+    const data = await response.json();
+
+    if (!data?.success || !Array.isArray(data.services)) {
+      throw new Error('اطلاعات سرویس‌ها معتبر نیست.');
+    }
+
+    API_SERVICES = data.services.filter(
+      service => service.is_active !== false
+    );
+
+    API_SERVICES_LOADED = true;
+
+    console.log(
+      'FollowCenter API services loaded:',
+      API_SERVICES
+    );
+
+    return API_SERVICES;
+
+  } catch (error) {
+
+    console.error(
+      'API services error:',
+      error
+    );
+
+    API_SERVICES = [];
+    API_SERVICES_LOADED = false;
+
+    return [];
+  }
+}
+
+/*
+ * پیدا کردن سرویس واقعی دیتابیس
+ *
+ * مثلا:
+ * tg_channel
+ *
+ * نتیجه:
+ * {
+ *   id: 13,
+ *   service_code: "tg_channel",
+ *   ...
+ * }
+ */
+function getApiService(serviceCode) {
+
+  return API_SERVICES.find(
+    service =>
+      String(service.service_code) ===
+      String(serviceCode)
+  );
+}
+
+/*
+ * منوی موبایل و منوی اصلی
+ */
 function initNav() {
-  const toggle = document.querySelector('.mobile-toggle');
-  const menu = document.querySelector('.menu');
+
+  const toggle =
+    document.querySelector('.mobile-toggle');
+
+  const menu =
+    document.querySelector('.menu');
 
   if (toggle && menu) {
+
     toggle.onclick = () => {
       menu.classList.toggle('open');
     };
   }
 
   const page =
-    location.pathname.split('/').pop() || 'index.html';
+    location.pathname.split('/').pop() ||
+    'index.html';
 
-  document.querySelectorAll('.menu a').forEach(a => {
-    if (a.getAttribute('href') === page) {
-      a.classList.add('active');
-    }
-  });
+  document
+    .querySelectorAll('.menu a')
+    .forEach(a => {
+
+      if (a.getAttribute('href') === page) {
+        a.classList.add('active');
+      }
+
+    });
 }
 
+/*
+ * کارت‌های سرویس
+ */
 function serviceCards(limit) {
-  const host = document.querySelector('#serviceCards');
+
+  const host =
+    document.querySelector('#serviceCards');
 
   if (!host) return;
 
   const services =
-    limit ? allServices.slice(0, limit) : allServices;
+    limit
+      ? allServices.slice(0, limit)
+      : allServices;
 
-  host.innerHTML = services.map(s => `
-    <a class="card service-card"
-       href="order.html?service=${encodeURIComponent(s.id)}">
+  host.innerHTML =
+    services.map(s => `
 
-      <div class="icon">
-        ${SERVICES[s.network].icon}
-      </div>
+      <a
+        class="card service-card"
+        href="order.html?service=${encodeURIComponent(s.id)}"
+      >
 
-      <h3>${s.name}</h3>
+        <div class="icon">
+          ${SERVICES[s.network]?.icon || '★'}
+        </div>
 
-      <div class="price">
-        ${fmt(s.price)}
-        <small>/ 1K</small>
-      </div>
+        <h3>
+          ${s.name}
+        </h3>
 
-      <span class="network">
-        ${s.network}
-      </span>
+        <div class="price">
+          ${fmt(s.price)}
+          <small>/ 1K</small>
+        </div>
 
-    </a>
-  `).join('');
+        <span class="network">
+          ${
+            s.network === 'Instagram'
+              ? 'اینستاگرام'
+              : s.network === 'Telegram'
+                ? 'تلگرام'
+                : s.network === 'Rubika'
+                  ? 'روبیکا'
+                  : 'ایتا'
+          }
+        </span>
+
+      </a>
+
+    `).join('');
 }
 
-function setupOrder() {
+/*
+ * صفحه ثبت سفارش
+ */
+async function setupOrder() {
 
   const network =
     document.querySelector('#network');
@@ -153,41 +275,59 @@ function setupOrder() {
   const form =
     document.querySelector('#orderForm');
 
-  if (!network || !service || !qty || !form) {
+  if (
+    !network ||
+    !service ||
+    !qty ||
+    !form
+  ) {
     return;
   }
+
+  /*
+   * ابتدا سرویس‌های واقعی API را دریافت می‌کنیم.
+   */
+  await loadApiServices();
 
   /*
    * شبکه‌ها
    */
   network.innerHTML =
     '<option value="">انتخاب شبکه</option>' +
+
     Object.keys(SERVICES)
       .map(n => `
+
         <option value="${n}">
           ${
             n === 'Rubika'
               ? 'روبیکا'
               : n === 'Eitaa'
                 ? 'ایتا'
-                : n
+                : n === 'Instagram'
+                  ? 'اینستاگرام'
+                  : 'تلگرام'
           }
         </option>
+
       `)
       .join('');
 
   /*
-   * سرویس‌ها
+   * پر کردن سرویس‌ها
    */
   function fillServices() {
 
     service.innerHTML =
       '<option value="">انتخاب سرویس</option>' +
+
       (SERVICES[network.value]?.items || [])
         .map(x => `
+
           <option value="${x[0]}">
             ${x[1]} — ${fmt(x[2])}/1K
           </option>
+
         `)
         .join('');
 
@@ -205,47 +345,70 @@ function setupOrder() {
       );
 
     const quantity =
-      Math.max(0, Number(qty.value) || 0);
+      Math.max(
+        0,
+        Number(qty.value) || 0
+      );
 
-    if (!selected || quantity <= 0) {
-      total.textContent = '۰ تومان';
+    if (
+      !selected ||
+      quantity <= 0
+    ) {
+
+      total.textContent =
+        '۰ تومان';
+
       return;
     }
 
     total.textContent =
-      fmt(selected.price * quantity / 1000);
+      fmt(
+        selected.price *
+        quantity /
+        1000
+      );
   }
 
-  network.onchange = fillServices;
-  service.onchange = calculateTotal;
-  qty.oninput = calculateTotal;
+  network.onchange =
+    fillServices;
+
+  service.onchange =
+    calculateTotal;
+
+  qty.oninput =
+    calculateTotal;
 
   /*
    * انتخاب سرویس از URL
    */
   const qs =
-    new URLSearchParams(location.search)
-      .get('service');
+    new URLSearchParams(
+      location.search
+    ).get('service');
 
   if (qs) {
 
     const selected =
-      allServices.find(x => x.id === qs);
+      allServices.find(
+        x => x.id === qs
+      );
 
     if (selected) {
 
-      network.value = selected.network;
+      network.value =
+        selected.network;
 
       fillServices();
 
-      service.value = selected.id;
+      service.value =
+        selected.id;
 
       calculateTotal();
     }
   }
 
   /*
-   * ثبت سفارش واقعی
+   * ثبت سفارش
    */
   form.onsubmit = async e => {
 
@@ -261,17 +424,27 @@ function setupOrder() {
 
     const link =
       document.querySelector('#link')
-        ?.value.trim() || '';
+        ?.value
+        .trim() || '';
 
     const phone =
       document.querySelector('#phone')
-        ?.value.trim() || '';
+        ?.value
+        .trim() || '';
 
     const notes =
       document.querySelector('#notes')
-        ?.value.trim() || '';
+        ?.value
+        .trim() || '';
 
-    if (!selected || !Number.isInteger(quantity) || quantity < 1) {
+    /*
+     * اعتبارسنجی اولیه
+     */
+    if (
+      !selected ||
+      !Number.isInteger(quantity) ||
+      quantity < 1
+    ) {
 
       toast(
         'لطفاً شبکه، سرویس و تعداد را درست انتخاب کنید.'
@@ -290,7 +463,77 @@ function setupOrder() {
     }
 
     /*
-     * جلوگیری از ارسال دوباره
+     * پیدا کردن سرویس واقعی در دیتابیس
+     */
+    let apiService =
+      getApiService(selected.id);
+
+    /*
+     * اگر سرویس‌ها هنوز لود نشده‌اند،
+     * دوباره از API دریافت می‌کنیم.
+     */
+    if (!apiService) {
+
+      await loadApiServices();
+
+      apiService =
+        getApiService(selected.id);
+    }
+
+    /*
+     * اگر سرویس در API پیدا نشد
+     */
+    if (!apiService) {
+
+      console.error(
+        'Service mapping failed:',
+        {
+          frontendServiceCode: selected.id,
+          frontendServiceName: selected.name,
+          apiServices: API_SERVICES
+        }
+      );
+
+      toast(
+        'سرویس انتخاب شده در سرور پیدا نشد. لطفاً صفحه را تازه‌سازی کنید.'
+      );
+
+      return;
+    }
+
+    /*
+     * ID واقعی دیتابیس
+     *
+     * مثال:
+     *
+     * tg_channel
+     *
+     * تبدیل می‌شود به:
+     *
+     * 13
+     */
+    const databaseServiceId =
+      Number(apiService.id);
+
+    if (
+      !Number.isInteger(databaseServiceId) ||
+      databaseServiceId < 1
+    ) {
+
+      console.error(
+        'Invalid database service ID:',
+        apiService
+      );
+
+      toast(
+        'شناسه سرویس در سرور معتبر نیست.'
+      );
+
+      return;
+    }
+
+    /*
+     * جلوگیری از ثبت دوباره
      */
     const submitButton =
       form.querySelector(
@@ -298,7 +541,10 @@ function setupOrder() {
       );
 
     if (submitButton) {
-      submitButton.disabled = true;
+
+      submitButton.disabled =
+        true;
+
       submitButton.dataset.oldText =
         submitButton.textContent;
 
@@ -308,32 +554,66 @@ function setupOrder() {
 
     try {
 
+      console.log(
+        'Submitting order:',
+        {
+          serviceCode: selected.id,
+          databaseServiceId,
+          quantity,
+          link,
+          phone
+        }
+      );
+
       const response =
-        await fetch(`${API_BASE}/api/orders`, {
-          method: 'POST',
+        await fetch(
+          `${API_BASE}/api/orders`,
+          {
+            method: 'POST',
 
-          headers: {
-            'Content-Type': 'application/json'
-          },
+            headers: {
+              'Content-Type':
+                'application/json',
+              'Accept':
+                'application/json'
+            },
 
-          body: JSON.stringify({
-            serviceId: selected.id,
-            quantity,
-            link,
-            phone,
-            notes
-          })
-        });
+            body: JSON.stringify({
+
+              /*
+               * مهم‌ترین تغییر:
+               * اینجا دیگر tg_channel
+               * ارسال نمی‌شود.
+               *
+               * ID واقعی دیتابیس ارسال می‌شود.
+               */
+              serviceId:
+                databaseServiceId,
+
+              quantity,
+              link,
+              phone,
+              notes
+            })
+          }
+        );
 
       let data = null;
 
       try {
-        data = await response.json();
+
+        data =
+          await response.json();
+
       } catch {
+
         data = null;
       }
 
-      if (!response.ok || !data?.success) {
+      if (
+        !response.ok ||
+        !data?.success
+      ) {
 
         throw new Error(
           data?.message ||
@@ -350,6 +630,7 @@ function setupOrder() {
       if (success) {
 
         success.innerHTML = `
+
           <div class="notice">
 
             <strong>
@@ -377,6 +658,7 @@ function setupOrder() {
             این کد را برای پیگیری سفارش خود نگه دارید.
 
           </div>
+
         `;
 
       } else {
@@ -410,7 +692,8 @@ function setupOrder() {
 
       if (submitButton) {
 
-        submitButton.disabled = false;
+        submitButton.disabled =
+          false;
 
         submitButton.textContent =
           submitButton.dataset.oldText ||
@@ -420,13 +703,20 @@ function setupOrder() {
   };
 }
 
+/*
+ * پیگیری سفارش
+ */
 async function setupTracking() {
 
   const form =
-    document.querySelector('#trackingForm');
+    document.querySelector(
+      '#trackingForm'
+    );
 
   const result =
-    document.querySelector('#trackingResult');
+    document.querySelector(
+      '#trackingResult'
+    );
 
   if (!form || !result) {
     return;
@@ -440,48 +730,83 @@ async function setupTracking() {
       document.querySelector('#code');
 
     const code =
-      input?.value.trim().toUpperCase() || '';
+      input?.value
+        .trim()
+        .toUpperCase() || '';
 
-    if (!/^FC-\d{6}$/.test(code)) {
+    if (
+      !/^FC-\d{6}$/.test(code)
+    ) {
 
       result.innerHTML = `
+
         <div class="notice">
+
           کد پیگیری را به شکل
-          <strong>FC-123456</strong>
+
+          <strong>
+            FC-123456
+          </strong>
+
           وارد کنید.
+
         </div>
+
       `;
 
       return;
     }
 
     result.innerHTML = `
+
       <div class="notice">
         در حال دریافت اطلاعات سفارش...
       </div>
+
     `;
 
     try {
 
       const response =
         await fetch(
-          `${API_BASE}/api/orders/${encodeURIComponent(code)}`
+          `${API_BASE}/api/orders/${encodeURIComponent(code)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept':
+                'application/json'
+            }
+          }
         );
 
       let data = null;
 
       try {
-        data = await response.json();
+
+        data =
+          await response.json();
+
       } catch {
+
         data = null;
       }
 
-      if (!response.ok || !data?.success) {
+      if (
+        !response.ok ||
+        !data?.success
+      ) {
 
         result.innerHTML = `
+
           <div class="notice">
-            ${data?.message || 'سفارش پیدا نشد.'}
+
+            ${
+              data?.message ||
+              'سفارش پیدا نشد.'
+            }
+
           </div>
+
         `;
 
         return;
@@ -491,16 +816,26 @@ async function setupTracking() {
         data.order;
 
       result.innerHTML = `
+
         <div class="panel card">
 
           <div class="section-head">
 
             <div>
-              <h2>${o.code}</h2>
+
+              <h2>
+                ${o.code}
+              </h2>
 
               <span class="muted">
-                ${new Date(o.date).toLocaleString('fa-IR')}
+
+                ${
+                  new Date(o.date)
+                    .toLocaleString('fa-IR')
+                }
+
               </span>
+
             </div>
 
             ${statusBadge(o.status)}
@@ -510,45 +845,68 @@ async function setupTracking() {
           <div class="grid">
 
             <div>
+
               <span class="muted">
                 شبکه
               </span>
+
               <br>
-              <b>${o.network}</b>
+
+              <b>
+                ${o.network}
+              </b>
+
             </div>
 
             <div>
+
               <span class="muted">
                 سرویس
               </span>
+
               <br>
-              <b>${o.service}</b>
+
+              <b>
+                ${o.service}
+              </b>
+
             </div>
 
             <div>
+
               <span class="muted">
                 تعداد
               </span>
+
               <br>
+
               <b>
-                ${Number(o.quantity)
-                  .toLocaleString('fa-IR')}
+                ${
+                  Number(o.quantity)
+                    .toLocaleString('fa-IR')
+                }
               </b>
+
             </div>
 
             <div>
+
               <span class="muted">
                 مبلغ
               </span>
+
               <br>
+
               <b>
                 ${fmt(o.amount)}
               </b>
+
             </div>
 
           </div>
 
         </div>
+
       `;
 
     } catch (error) {
@@ -559,15 +917,22 @@ async function setupTracking() {
       );
 
       result.innerHTML = `
+
         <div class="notice">
+
           ارتباط با سرور برقرار نشد.
           لطفاً دوباره تلاش کنید.
+
         </div>
+
       `;
     }
   };
 }
 
+/*
+ * وضعیت سفارش
+ */
 function statusBadge(status) {
 
   const badges = {
@@ -585,87 +950,128 @@ function statusBadge(status) {
       '<span class="badge cancelled">🔴 لغو شده</span>'
   };
 
-  return badges[status] || status;
+  return (
+    badges[status] ||
+    status ||
+    'نامشخص'
+  );
 }
 
 /*
  * صفحه سفارش‌های من
  *
- * فعلاً چون سیستم ورود کاربر هنوز ساخته نشده،
- * سفارش‌ها در این صفحه از سرور نمایش داده نمی‌شوند.
- *
- * این بخش را بعد از ساخت Login/OTP و احراز هویت
- * به شکل امن به حساب کاربر متصل می‌کنیم.
+ * تا زمانی که سیستم ورود امن ساخته نشده،
+ * سفارش‌ها در این صفحه نمایش داده نمی‌شوند.
  */
 function renderOrders() {
 
   const body =
-    document.querySelector('#ordersBody');
+    document.querySelector(
+      '#ordersBody'
+    );
 
   if (!body) return;
 
   body.innerHTML = `
+
     <tr>
-      <td colspan="6" class="empty">
+
+      <td
+        colspan="6"
+        class="empty"
+      >
+
         برای مشاهده سفارش‌های حساب کاربری،
         ابتدا سیستم ورود را فعال می‌کنیم.
+
         <br><br>
+
         فعلاً می‌توانید با کد پیگیری،
-        سفارش خود را از صفحه «پیگیری سفارش»
+        سفارش خود را از صفحه
+        «پیگیری سفارش»
         بررسی کنید.
+
       </td>
+
     </tr>
+
   `;
 
   const counts = {
+
     all: 0,
     pending: 0,
     running: 0,
     done: 0,
     cancelled: 0
+
   };
 
-  Object.entries(counts).forEach(
-    ([key, value]) => {
+  Object.entries(counts)
+    .forEach(
+      ([key, value]) => {
 
-      const el =
-        document.querySelector(
-          `[data-count="${key}"]`
-        );
+        const el =
+          document.querySelector(
+            `[data-count="${key}"]`
+          );
 
-      if (el) {
-        el.textContent =
-          value.toLocaleString('fa-IR');
+        if (el) {
+
+          el.textContent =
+            value.toLocaleString(
+              'fa-IR'
+            );
+        }
       }
-    }
-  );
+    );
 }
 
-function inject() {
+/*
+ * اجرای اصلی سایت
+ */
+async function inject() {
 
   document
-    .querySelectorAll('[data-year]')
+    .querySelectorAll(
+      '[data-year]'
+    )
     .forEach(x => {
+
       x.textContent =
         new Date().getFullYear();
+
     });
 
   initNav();
 
   const serviceCardsElement =
-    document.querySelector('#serviceCards');
+    document.querySelector(
+      '#serviceCards'
+    );
 
   const limit =
     serviceCardsElement?.dataset.limit
-      ? Number(serviceCardsElement.dataset.limit)
+      ? Number(
+          serviceCardsElement.dataset.limit
+        )
       : undefined;
 
   serviceCards(limit);
 
-  setupOrder();
+  /*
+   * صفحه سفارش
+   */
+  await setupOrder();
 
+  /*
+   * سفارش‌های من
+   */
   renderOrders();
 
+  /*
+   * پیگیری
+   */
   setupTracking();
 }
 
