@@ -7,9 +7,8 @@ const { Pool } = require('pg');
 const app = express();
 
 const PORT = process.env.PORT || 10000;
-const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!DATABASE_URL) {
+if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not configured.');
   process.exit(1);
 }
@@ -22,7 +21,9 @@ app.disable('x-powered-by');
 
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: {
+      policy: 'cross-origin'
+    }
   })
 );
 
@@ -30,7 +31,8 @@ app.use(
   cors({
     origin: [
       'https://followcenter.ir',
-      'https://www.followcenter.ir'
+      'https://www.followcenter.ir',
+      'https://followcenter-site.onrender.com'
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
@@ -62,7 +64,7 @@ app.use('/api/', apiLimiter);
 ========================================================= */
 
 const pool = new Pool({
-  connectionString: DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
   ssl:
     process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
@@ -77,7 +79,6 @@ const pool = new Pool({
 ========================================================= */
 
 const SERVICES = [
-  // Instagram
   {
     code: 'ig_follow',
     network: 'instagram',
@@ -151,7 +152,6 @@ const SERVICES = [
     price: 50000
   },
 
-  // Telegram
   {
     code: 'tg_channel',
     network: 'telegram',
@@ -213,7 +213,6 @@ const SERVICES = [
     price: 260000
   },
 
-  // Rubika
   {
     code: 'rb_follow',
     network: 'rubika',
@@ -233,7 +232,6 @@ const SERVICES = [
     price: 20000
   },
 
-  // Eitaa
   {
     code: 'ea_channel',
     network: 'eitaa',
@@ -271,7 +269,9 @@ const SERVICES = [
 ========================================================= */
 
 function cleanString(value, maxLength = 2000) {
-  if (value === undefined || value === null) return '';
+  if (value === undefined || value === null) {
+    return '';
+  }
 
   return String(value)
     .trim()
@@ -296,17 +296,20 @@ function isValidUrl(value) {
 }
 
 function isValidQuantity(value) {
-  const number = Number(value);
+  const quantity = Number(value);
 
   return (
-    Number.isInteger(number) &&
-    number >= 1 &&
-    number <= 100000000
+    Number.isInteger(quantity) &&
+    quantity >= 1 &&
+    quantity <= 100000000
   );
 }
 
 function generateOrderCode() {
-  const number = Math.floor(100000 + Math.random() * 900000);
+  const number = Math.floor(
+    100000 + Math.random() * 900000
+  );
+
   return `FC-${number}`;
 }
 
@@ -315,7 +318,12 @@ async function generateUniqueOrderCode() {
     const code = generateOrderCode();
 
     const result = await pool.query(
-      'SELECT id FROM orders WHERE order_code = $1 LIMIT 1',
+      `
+      SELECT id
+      FROM orders
+      WHERE order_code = $1
+      LIMIT 1
+      `,
       [code]
     );
 
@@ -354,17 +362,15 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS services (
         id SERIAL PRIMARY KEY,
-        service_code VARCHAR(100) UNIQUE NOT NULL,
-        network VARCHAR(50) NOT NULL,
-        name TEXT NOT NULL,
-        price NUMERIC(14,2) NOT NULL DEFAULT 0,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        service_code VARCHAR(100),
+        network VARCHAR(50),
+        name TEXT,
+        price NUMERIC(14,2) DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    /* Compatibility with older database versions */
 
     await client.query(`
       ALTER TABLE services
@@ -401,10 +407,10 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
-        order_code VARCHAR(50) UNIQUE NOT NULL,
+        order_code VARCHAR(50),
         user_id INTEGER,
         service_id INTEGER,
-        quantity INTEGER NOT NULL,
+        quantity INTEGER,
         link TEXT,
         target_url TEXT,
         phone VARCHAR(30),
@@ -415,8 +421,6 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    /* Compatibility with old orders table */
 
     await client.query(`
       ALTER TABLE orders
@@ -478,7 +482,7 @@ async function initializeDatabase() {
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
-    /* Fix old records / compatibility */
+    /* Compatibility fixes */
 
     await client.query(`
       UPDATE orders
@@ -535,44 +539,84 @@ async function initializeDatabase() {
       )
     `);
 
-    /* SEED / UPDATE SERVICES */
+    /* SERVICE CATALOG
+       بدون ON CONFLICT
+       تا با دیتابیس قدیمی هم سازگار باشد.
+    */
 
     for (const service of SERVICES) {
-      await client.query(
+      const existing = await client.query(
         `
-        INSERT INTO services (
-          service_code,
-          network,
-          name,
-          price,
-          is_active,
-          updated_at
-        )
-        VALUES ($1, $2, $3, $4, TRUE, CURRENT_TIMESTAMP)
-        ON CONFLICT (service_code)
-        DO UPDATE SET
-          network = EXCLUDED.network,
-          name = EXCLUDED.name,
-          price = EXCLUDED.price,
-          is_active = TRUE,
-          updated_at = CURRENT_TIMESTAMP
+        SELECT id
+        FROM services
+        WHERE service_code = $1
+        ORDER BY id ASC
+        LIMIT 1
         `,
-        [
-          service.code,
-          service.network,
-          service.name,
-          service.price
-        ]
+        [service.code]
       );
+
+      if (existing.rowCount > 0) {
+        await client.query(
+          `
+          UPDATE services
+          SET
+            network = $1,
+            name = $2,
+            price = $3,
+            is_active = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $4
+          `,
+          [
+            service.network,
+            service.name,
+            service.price,
+            existing.rows[0].id
+          ]
+        );
+      } else {
+        await client.query(
+          `
+          INSERT INTO services (
+            service_code,
+            network,
+            name,
+            price,
+            is_active,
+            updated_at
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            TRUE,
+            CURRENT_TIMESTAMP
+          )
+          `,
+          [
+            service.code,
+            service.network,
+            service.name,
+            service.price
+          ]
+        );
+      }
     }
 
     await client.query('COMMIT');
 
-    console.log('Database initialized successfully.');
+    console.log(
+      'Database initialized successfully.'
+    );
   } catch (error) {
     await client.query('ROLLBACK');
 
-    console.error('Database initialization failed:', error);
+    console.error(
+      'Database initialization failed:',
+      error
+    );
 
     throw error;
   } finally {
@@ -610,7 +654,10 @@ app.get('/api/health', async (req, res) => {
       database: 'connected'
     });
   } catch (error) {
-    console.error('Health check failed:', error);
+    console.error(
+      'Health check failed:',
+      error
+    );
 
     res.status(503).json({
       success: false,
@@ -621,7 +668,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 /* =========================================================
-   SERVICES API
+   SERVICES
 ========================================================= */
 
 app.get('/api/services', async (req, res) => {
@@ -644,7 +691,10 @@ app.get('/api/services', async (req, res) => {
       services: result.rows
     });
   } catch (error) {
-    console.error('Services error:', error);
+    console.error(
+      'Services error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -655,21 +705,37 @@ app.get('/api/services', async (req, res) => {
 
 /* =========================================================
    CREATE ORDER
-   بدون نیاز به درگاه پرداخت
+   بدون درگاه پرداخت
 ========================================================= */
 
 app.post('/api/orders', async (req, res) => {
   try {
-    const serviceId = Number(req.body.serviceId);
-    const quantity = Number(req.body.quantity);
+    const serviceId = Number(
+      req.body.serviceId
+    );
 
-    const link = cleanString(req.body.link, 2000);
-    const phone = cleanPhone(req.body.phone);
-    const notes = cleanString(req.body.notes, 1000);
+    const quantity = Number(
+      req.body.quantity
+    );
 
-    /* Validation */
+    const link = cleanString(
+      req.body.link,
+      2000
+    );
 
-    if (!Number.isInteger(serviceId) || serviceId <= 0) {
+    const phone = cleanPhone(
+      req.body.phone
+    );
+
+    const notes = cleanString(
+      req.body.notes,
+      1000
+    );
+
+    if (
+      !Number.isInteger(serviceId) ||
+      serviceId <= 0
+    ) {
       return res.status(400).json({
         success: false,
         message: 'سرویس انتخاب‌شده معتبر نیست.'
@@ -683,21 +749,25 @@ app.post('/api/orders', async (req, res) => {
       });
     }
 
-    if (!link || !isValidUrl(link)) {
+    if (
+      !link ||
+      !isValidUrl(link)
+    ) {
       return res.status(400).json({
         success: false,
         message: 'لینک واردشده معتبر نیست.'
       });
     }
 
-    if (!phone || phone.length < 8) {
+    if (
+      !phone ||
+      phone.length < 8
+    ) {
       return res.status(400).json({
         success: false,
         message: 'شماره تماس معتبر نیست.'
       });
     }
-
-    /* Get service */
 
     const serviceResult = await pool.query(
       `
@@ -724,32 +794,30 @@ app.post('/api/orders', async (req, res) => {
 
     const service = serviceResult.rows[0];
 
-    /* Calculate price on server */
+    const unitPrice = Number(
+      service.price
+    );
 
-    const unitPrice = Number(service.price);
     const totalPrice = Math.round(
       (unitPrice * quantity) / 1000
     );
 
-    if (!Number.isFinite(totalPrice) || totalPrice < 0) {
+    if (
+      !Number.isFinite(totalPrice) ||
+      totalPrice < 0
+    ) {
       return res.status(400).json({
         success: false,
         message: 'قیمت سفارش معتبر نیست.'
       });
     }
 
-    const orderCode = await generateUniqueOrderCode();
-
-    /*
-      فعلاً user_id نداریم چون سیستم حساب کاربری هنوز ساخته نشده.
-      بعداً با سیستم ورود، user_id واقعی اینجا قرار می‌گیرد.
-    */
+    const orderCode =
+      await generateUniqueOrderCode();
 
     const userId = null;
 
-    /* Insert order */
-
-    const insertResult = await pool.query(
+    const result = await pool.query(
       `
       INSERT INTO orders (
         order_code,
@@ -803,7 +871,7 @@ app.post('/api/orders', async (req, res) => {
       ]
     );
 
-    const order = insertResult.rows[0];
+    const order = result.rows[0];
 
     console.log(
       `Order created successfully: ${order.order_code}`
@@ -822,7 +890,10 @@ app.post('/api/orders', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Create order error:', error);
+    console.error(
+      'Create order error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -837,7 +908,10 @@ app.post('/api/orders', async (req, res) => {
 
 app.get('/api/orders/:code', async (req, res) => {
   try {
-    const code = cleanString(req.params.code, 50).toUpperCase();
+    const code = cleanString(
+      req.params.code,
+      50
+    ).toUpperCase();
 
     if (!/^FC-\d{6}$/.test(code)) {
       return res.status(400).json({
@@ -875,6 +949,11 @@ app.get('/api/orders/:code', async (req, res) => {
 
     const order = result.rows[0];
 
+    const amount =
+      order.amount !== null
+        ? Number(order.amount)
+        : Number(order.total_price || 0);
+
     res.json({
       success: true,
       order: {
@@ -882,16 +961,16 @@ app.get('/api/orders/:code', async (req, res) => {
         service: order.service_name,
         network: order.network,
         quantity: order.quantity,
-        amount:
-          order.amount !== null
-            ? Number(order.amount)
-            : Number(order.total_price || 0),
+        amount,
         status: order.status,
         createdAt: order.created_at
       }
     });
   } catch (error) {
-    console.error('Tracking error:', error);
+    console.error(
+      'Tracking error:',
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -915,32 +994,41 @@ app.use((req, res) => {
    GLOBAL ERROR HANDLER
 ========================================================= */
 
-app.use((error, req, res, next) => {
-  console.error('Unhandled API error:', error);
+app.use(
+  (error, req, res, next) => {
+    console.error(
+      'Unhandled API error:',
+      error
+    );
 
-  if (res.headersSent) {
-    return next(error);
+    if (res.headersSent) {
+      return next(error);
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'خطای داخلی سرور.'
+    });
   }
-
-  res.status(500).json({
-    success: false,
-    message: 'خطای داخلی سرور.'
-  });
-});
+);
 
 /* =========================================================
-   START SERVER
+   START
 ========================================================= */
 
 async function startServer() {
   try {
     await initializeDatabase();
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(
-        `FollowCenter API running on port ${PORT}`
-      );
-    });
+    app.listen(
+      PORT,
+      '0.0.0.0',
+      () => {
+        console.log(
+          `FollowCenter API running on port ${PORT}`
+        );
+      }
+    );
   } catch (error) {
     console.error(
       'Server could not start because database initialization failed.'
