@@ -5,7 +5,7 @@ const rateLimit = require("express-rate-limit");
 const { Pool } = require("pg");
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = Number(process.env.PORT) || 10000;
 
 /* =========================================================
    DATABASE
@@ -63,7 +63,11 @@ const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "تعداد درخواست‌ها زیاد است. چند دقیقه بعد دوباره تلاش کنید."
+  }
 });
 
 app.use("/api/", apiLimiter);
@@ -73,481 +77,79 @@ app.use("/api/", apiLimiter);
 ========================================================= */
 
 const SERVICES = [
+  /* Instagram */
+  ["ig_follow", "instagram", "خرید فالوور اینستاگرام", 150000, 10, 5000000, "افزایش فالوور اینستاگرام"],
+  ["ig_like", "instagram", "خرید لایک اینستاگرام", 30000, 10, 1000000, "افزایش لایک اینستاگرام"],
+  ["ig_view", "instagram", "خرید ویو اینستاگرام", 20000, 100, 10000000, "افزایش ویو اینستاگرام"],
+  ["ig_story_view", "instagram", "خرید ویو استوری اینستاگرام", 25000, 100, 1000000, "افزایش ویو استوری"],
+  ["ig_comment", "instagram", "خرید کامنت اینستاگرام", 80000, 10, 100000, "افزایش کامنت اینستاگرام"],
+  ["ig_save", "instagram", "خرید سیو اینستاگرام", 45000, 10, 500000, "افزایش سیو اینستاگرام"],
+  ["ig_share", "instagram", "خرید اشتراک‌گذاری اینستاگرام", 45000, 10, 500000, "افزایش اشتراک‌گذاری"],
+  ["ig_story_like", "instagram", "خرید لایک استوری اینستاگرام", 35000, 10, 500000, "افزایش لایک استوری"],
+  ["ig_live", "instagram", "خرید ویو لایو اینستاگرام", 60000, 10, 100000, "افزایش بازدید لایو"],
+  ["ig_explore", "instagram", "افزایش بازدید اکسپلور", 70000, 1, 100, "خدمات اکسپلور"],
+  ["ig_impression", "instagram", "افزایش ایمپرشن اینستاگرام", 30000, 100, 10000000, "افزایش ایمپرشن"],
+  ["ig_poll", "instagram", "تعامل نظرسنجی اینستاگرام", 50000, 10, 100000, "تعامل نظرسنجی"],
+  ["ig_video_view", "instagram", "خرید ویو ویدیو اینستاگرام", 22000, 100, 10000000, "افزایش ویو ویدیو"],
+  ["ig_repost", "instagram", "خرید ری‌پست اینستاگرام", 50000, 10, 500000, "افزایش ری‌پست"],
+  ["ig_comment_like", "instagram", "لایک کامنت اینستاگرام", 40000, 10, 100000, "افزایش لایک کامنت"],
+  ["ig_channel_member", "instagram", "عضو کانال اینستاگرام", 160000, 10, 500000, "افزایش اعضای کانال"],
 
-  /* =========================
-     INSTAGRAM
-  ========================= */
+  /* Telegram */
+  ["tg_channel", "telegram", "افزایش ممبر کانال تلگرام", 180000, 10, 1000000, "افزایش اعضای کانال"],
+  ["tg_group", "telegram", "افزایش ممبر گروه تلگرام", 180000, 10, 1000000, "افزایش اعضای گروه"],
+  ["tg_view", "telegram", "خرید ویو تلگرام", 25000, 100, 10000000, "افزایش ویو"],
+  ["tg_story", "telegram", "خرید ویو استوری تلگرام", 30000, 100, 1000000, "افزایش ویو استوری"],
+  ["tg_reaction", "telegram", "خرید ری‌اکشن تلگرام", 35000, 10, 1000000, "افزایش ری‌اکشن"],
+  ["tg_like", "telegram", "خرید لایک تلگرام", 35000, 10, 1000000, "افزایش لایک"],
+  ["tg_share", "telegram", "خرید اشتراک‌گذاری تلگرام", 30000, 10, 500000, "افزایش اشتراک‌گذاری"],
+  ["tg_ads", "telegram", "تبلیغات تلگرام", 220000, 1, 1000, "تبلیغات تلگرام"],
+  ["tg_poll", "telegram", "تعامل نظرسنجی تلگرام", 40000, 10, 100000, "تعامل نظرسنجی"],
+  ["tg_premium", "telegram", "خدمات تلگرام پریمیوم", 260000, 10, 100000, "خدمات پریمیوم"],
+  ["tg_story_like", "telegram", "لایک استوری تلگرام", 30000, 10, 500000, "لایک استوری"],
+  ["tg_boost", "telegram", "بوست تلگرام", 200000, 1, 10000, "بوست کانال"],
+  ["tg_star", "telegram", "استار تلگرام", 400000, 1, 100000, "استار تلگرام"],
+  ["tg_gift", "telegram", "گیفت تلگرام", 300000, 1, 10000, "گیفت تلگرام"],
+  ["tg_reaction_positive", "telegram", "ری‌اکشن مثبت تلگرام", 20000, 10, 1000000, "ری‌اکشن مثبت"],
+  ["tg_reaction_negative", "telegram", "ری‌اکشن منفی تلگرام", 20000, 10, 1000000, "ری‌اکشن منفی"],
 
-  [
-    "ig_follow",
-    "instagram",
-    "فالوور اینستاگرام",
-    150000,
-    10,
-    5000000,
-    "افزایش فالوور اینستاگرام"
-  ],
+  /* Rubika */
+  ["rb_follow", "rubika", "خرید دنبال‌کننده روبیکا", 140000, 10, 1000000, "افزایش دنبال‌کننده"],
+  ["rb_like", "rubika", "خرید لایک روبیکا", 30000, 10, 1000000, "افزایش لایک"],
+  ["rb_view", "rubika", "خرید ویو روبیکا", 20000, 100, 10000000, "افزایش ویو"],
+  ["rb_comment", "rubika", "خرید کامنت روبیکا", 50000, 10, 100000, "افزایش کامنت"],
+  ["rb_share", "rubika", "خرید اشتراک‌گذاری روبیکا", 35000, 10, 500000, "افزایش اشتراک‌گذاری"],
 
-  [
-    "ig_like",
-    "instagram",
-    "لایک اینستاگرام",
-    30000,
-    10,
-    1000000,
-    "افزایش لایک پست اینستاگرام"
-  ],
-
-  [
-    "ig_view",
-    "instagram",
-    "ویو پست اینستاگرام",
-    20000,
-    100,
-    10000000,
-    "افزایش بازدید پست اینستاگرام"
-  ],
-
-  [
-    "ig_story_view",
-    "instagram",
-    "ویو استوری اینستاگرام",
-    25000,
-    100,
-    1000000,
-    "افزایش بازدید استوری"
-  ],
-
-  [
-    "ig_comment",
-    "instagram",
-    "کامنت اینستاگرام",
-    80000,
-    10,
-    100000,
-    "افزایش کامنت برای پست اینستاگرام"
-  ],
-
-  [
-    "ig_save",
-    "instagram",
-    "سیو اینستاگرام",
-    45000,
-    10,
-    500000,
-    "افزایش ذخیره پست"
-  ],
-
-  [
-    "ig_share",
-    "instagram",
-    "اشتراک‌گذاری اینستاگرام",
-    45000,
-    10,
-    500000,
-    "افزایش اشتراک‌گذاری پست"
-  ],
-
-  [
-    "ig_story_like",
-    "instagram",
-    "لایک استوری اینستاگرام",
-    35000,
-    10,
-    500000,
-    "افزایش لایک استوری"
-  ],
-
-  [
-    "ig_live",
-    "instagram",
-    "بازدید لایو اینستاگرام",
-    60000,
-    10,
-    100000,
-    "افزایش بازدید لایو"
-  ],
-
-  [
-    "ig_explore",
-    "instagram",
-    "اکسپلور اینستاگرام",
-    70000,
-    1,
-    100,
-    "خدمات ورود محتوا به اکسپلور"
-  ],
-
-  [
-    "ig_impression",
-    "instagram",
-    "ایمپرشن اینستاگرام",
-    30000,
-    100,
-    10000000,
-    "افزایش ایمپرشن محتوا"
-  ],
-
-  [
-    "ig_poll",
-    "instagram",
-    "رأی نظرسنجی اینستاگرام",
-    50000,
-    10,
-    100000,
-    "افزایش رأی در نظرسنجی"
-  ],
-
-  [
-    "ig_video_view",
-    "instagram",
-    "ویو ویدیو اینستاگرام",
-    22000,
-    100,
-    10000000,
-    "افزایش بازدید ویدیو"
-  ],
-
-  [
-    "ig_repost",
-    "instagram",
-    "ری‌پست اینستاگرام",
-    50000,
-    10,
-    500000,
-    "افزایش ری‌پست محتوا"
-  ],
-
-  [
-    "ig_comment_like",
-    "instagram",
-    "لایک کامنت اینستاگرام",
-    40000,
-    10,
-    100000,
-    "افزایش لایک کامنت"
-  ],
-
-  [
-    "ig_channel_member",
-    "instagram",
-    "عضو کانال اینستاگرام",
-    160000,
-    10,
-    500000,
-    "افزایش اعضای کانال اینستاگرام"
-  ],
-
-  /* =========================
-     TELEGRAM
-  ========================= */
-
-  [
-    "tg_channel",
-    "telegram",
-    "عضو کانال تلگرام",
-    180000,
-    10,
-    1000000,
-    "افزایش اعضای کانال تلگرام"
-  ],
-
-  [
-    "tg_group",
-    "telegram",
-    "عضو گروه تلگرام",
-    180000,
-    10,
-    1000000,
-    "افزایش اعضای گروه تلگرام"
-  ],
-
-  [
-    "tg_view",
-    "telegram",
-    "ویو پست تلگرام",
-    25000,
-    100,
-    10000000,
-    "افزایش بازدید پست تلگرام"
-  ],
-
-  [
-    "tg_story",
-    "telegram",
-    "ویو استوری تلگرام",
-    30000,
-    100,
-    1000000,
-    "افزایش بازدید استوری تلگرام"
-  ],
-
-  [
-    "tg_reaction",
-    "telegram",
-    "ری‌اکشن تلگرام",
-    35000,
-    10,
-    1000000,
-    "افزایش ری‌اکشن پست"
-  ],
-
-  [
-    "tg_like",
-    "telegram",
-    "لایک تلگرام",
-    35000,
-    10,
-    1000000,
-    "افزایش لایک"
-  ],
-
-  [
-    "tg_share",
-    "telegram",
-    "اشتراک‌گذاری تلگرام",
-    30000,
-    10,
-    500000,
-    "افزایش اشتراک‌گذاری"
-  ],
-
-  [
-    "tg_ads",
-    "telegram",
-    "تبلیغات تلگرام",
-    220000,
-    1,
-    1000,
-    "خدمات تبلیغات تلگرام"
-  ],
-
-  [
-    "tg_poll",
-    "telegram",
-    "رأی نظرسنجی تلگرام",
-    40000,
-    10,
-    100000,
-    "افزایش رأی نظرسنجی"
-  ],
-
-  [
-    "tg_premium",
-    "telegram",
-    "عضو پریمیوم تلگرام",
-    260000,
-    10,
-    100000,
-    "افزایش اعضای پریمیوم"
-  ],
-
-  [
-    "tg_story_like",
-    "telegram",
-    "لایک استوری تلگرام",
-    30000,
-    10,
-    500000,
-    "افزایش لایک استوری"
-  ],
-
-  [
-    "tg_boost",
-    "telegram",
-    "بوست تلگرام",
-    200000,
-    1,
-    10000,
-    "خدمات بوست کانال"
-  ],
-
-  [
-    "tg_star",
-    "telegram",
-    "استار تلگرام",
-    400000,
-    1,
-    100000,
-    "خدمات استار تلگرام"
-  ],
-
-  [
-    "tg_gift",
-    "telegram",
-    "گیفت تلگرام",
-    300000,
-    1,
-    10000,
-    "خدمات گیفت تلگرام"
-  ],
-
-  [
-    "tg_reaction_positive",
-    "telegram",
-    "ری‌اکشن مثبت تلگرام",
-    20000,
-    10,
-    1000000,
-    "ری‌اکشن‌های مثبت"
-  ],
-
-  [
-    "tg_reaction_negative",
-    "telegram",
-    "ری‌اکشن منفی تلگرام",
-    20000,
-    10,
-    1000000,
-    "ری‌اکشن‌های منفی"
-  ],
-
-  /* =========================
-     RUBIKA
-  ========================= */
-
-  [
-    "rb_follow",
-    "rubika",
-    "فالوور روبیکا",
-    140000,
-    10,
-    1000000,
-    "افزایش دنبال‌کننده روبیکا"
-  ],
-
-  [
-    "rb_like",
-    "rubika",
-    "لایک روبیکا",
-    30000,
-    10,
-    1000000,
-    "افزایش لایک روبیکا"
-  ],
-
-  [
-    "rb_view",
-    "rubika",
-    "ویو روبیکا",
-    20000,
-    100,
-    10000000,
-    "افزایش بازدید روبیکا"
-  ],
-
-  [
-    "rb_comment",
-    "rubika",
-    "کامنت روبیکا",
-    50000,
-    10,
-    100000,
-    "افزایش کامنت روبیکا"
-  ],
-
-  [
-    "rb_share",
-    "rubika",
-    "اشتراک‌گذاری روبیکا",
-    35000,
-    10,
-    500000,
-    "افزایش اشتراک‌گذاری روبیکا"
-  ],
-
-  /* =========================
-     EITAA
-  ========================= */
-
-  [
-    "ea_channel",
-    "eitaa",
-    "عضو کانال ایتا",
-    150000,
-    10,
-    1000000,
-    "افزایش اعضای کانال ایتا"
-  ],
-
-  [
-    "ea_group",
-    "eitaa",
-    "عضو گروه ایتا",
-    150000,
-    10,
-    1000000,
-    "افزایش اعضای گروه ایتا"
-  ],
-
-  [
-    "ea_view",
-    "eitaa",
-    "ویو ایتا",
-    20000,
-    100,
-    10000000,
-    "افزایش بازدید ایتا"
-  ],
-
-  [
-    "ea_ads",
-    "eitaa",
-    "تبلیغات ایتا",
-    250000,
-    1,
-    1000,
-    "خدمات تبلیغات ایتا"
-  ],
-
-  [
-    "ea_directory",
-    "eitaa",
-    "ثبت در فهرست ایتا",
-    80000,
-    1,
-    1000,
-    "ثبت کانال یا محتوا در فهرست"
-  ],
-
-  [
-    "ea_like",
-    "eitaa",
-    "لایک ایتا",
-    30000,
-    10,
-    1000000,
-    "افزایش لایک ایتا"
-  ],
-
-  [
-    "ea_comment",
-    "eitaa",
-    "کامنت ایتا",
-    50000,
-    10,
-    100000,
-    "افزایش کامنت ایتا"
-  ]
+  /* Eitaa */
+  ["ea_channel", "eitaa", "افزایش ممبر کانال ایتا", 150000, 10, 1000000, "افزایش اعضای کانال"],
+  ["ea_group", "eitaa", "افزایش ممبر گروه ایتا", 150000, 10, 1000000, "افزایش اعضای گروه"],
+  ["ea_view", "eitaa", "خرید ویو ایتا", 20000, 100, 10000000, "افزایش ویو"],
+  ["ea_ads", "eitaa", "تبلیغات ایتا", 250000, 1, 1000, "تبلیغات ایتا"],
+  ["ea_directory", "eitaa", "افزایش بازدید دایرکتوری ایتا", 80000, 1, 1000, "خدمات دایرکتوری"],
+  ["ea_like", "eitaa", "خرید لایک ایتا", 30000, 10, 1000000, "افزایش لایک"],
+  ["ea_comment", "eitaa", "خرید کامنت ایتا", 50000, 10, 100000, "افزایش کامنت"]
 ];
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function cleanString(value, max = 2000) {
+function cleanString(value, maxLength = 2000) {
   if (value === undefined || value === null) {
     return "";
   }
 
-  return String(value).trim().slice(0, max);
+  return String(value)
+    .trim()
+    .slice(0, maxLength);
 }
 
 function cleanPhone(value) {
-  return cleanString(value, 30).replace(/[^\d+]/g, "");
+  return cleanString(value, 30)
+    .replace(/[^\d+]/g, "");
 }
 
-function validUrl(value) {
+function isValidUrl(value) {
   try {
     const url = new URL(value);
 
@@ -560,17 +162,22 @@ function validUrl(value) {
   }
 }
 
+function normalizeOrderCode(value) {
+  return cleanString(value, 50)
+    .toUpperCase();
+}
+
 function makeOrderCode() {
   return `FC-${Math.floor(
     100000 + Math.random() * 900000
   )}`;
 }
 
-async function uniqueOrderCode() {
-  for (let i = 0; i < 20; i++) {
+async function createUniqueOrderCode(client) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     const code = makeOrderCode();
 
-    const result = await pool.query(
+    const result = await client.query(
       `
       SELECT id
       FROM orders
@@ -585,7 +192,7 @@ async function uniqueOrderCode() {
     }
   }
 
-  throw new Error("Could not generate unique order code.");
+  throw new Error("Unable to generate unique order code.");
 }
 
 /* =========================================================
@@ -629,61 +236,6 @@ async function initializeDatabase() {
       )
     `);
 
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS service_code VARCHAR(100)
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS network VARCHAR(50)
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS name TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS price NUMERIC(14,2) DEFAULT 0
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS price_per_1000 NUMERIC(14,2) DEFAULT 0
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS min_quantity INTEGER DEFAULT 1
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS max_quantity INTEGER DEFAULT 100000000
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS description TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `);
-
     /* ORDERS */
 
     await client.query(`
@@ -703,28 +255,6 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    const orderColumns = [
-      ["order_code", "VARCHAR(50)"],
-      ["user_id", "INTEGER"],
-      ["service_id", "INTEGER"],
-      ["quantity", "INTEGER"],
-      ["link", "TEXT"],
-      ["target_url", "TEXT"],
-      ["phone", "VARCHAR(30)"],
-      ["notes", "TEXT"],
-      ["amount", "NUMERIC(14,2)"],
-      ["total_price", "NUMERIC(14,2)"],
-      ["status", "VARCHAR(50)"],
-      ["created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"]
-    ];
-
-    for (const [column, type] of orderColumns) {
-      await client.query(`
-        ALTER TABLE orders
-        ADD COLUMN IF NOT EXISTS ${column} ${type}
-      `);
-    }
 
     /* PAYMENTS */
 
@@ -754,20 +284,65 @@ async function initializeDatabase() {
       )
     `);
 
-    /* COMPATIBILITY */
+    /* =====================================================
+       EXISTING DATABASE COMPATIBILITY
+    ===================================================== */
 
-    await client.query(`
-      UPDATE services
-      SET price = price_per_1000
-      WHERE price IS NULL
-      AND price_per_1000 IS NOT NULL
-    `);
+    const serviceColumns = [
+      ["service_code", "VARCHAR(100)"],
+      ["network", "VARCHAR(50)"],
+      ["name", "TEXT"],
+      ["price", "NUMERIC(14,2) DEFAULT 0"],
+      ["price_per_1000", "NUMERIC(14,2) DEFAULT 0"],
+      ["min_quantity", "INTEGER DEFAULT 1"],
+      ["max_quantity", "INTEGER DEFAULT 100000000"],
+      ["description", "TEXT"],
+      ["is_active", "BOOLEAN DEFAULT TRUE"],
+      ["created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"],
+      ["updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"]
+    ];
+
+    for (const [column, type] of serviceColumns) {
+      await client.query(
+        `ALTER TABLE services ADD COLUMN IF NOT EXISTS "${column}" ${type}`
+      );
+    }
+
+    const orderColumns = [
+      ["order_code", "VARCHAR(50)"],
+      ["user_id", "INTEGER"],
+      ["service_id", "INTEGER"],
+      ["quantity", "INTEGER"],
+      ["link", "TEXT"],
+      ["target_url", "TEXT"],
+      ["phone", "VARCHAR(30)"],
+      ["notes", "TEXT"],
+      ["amount", "NUMERIC(14,2)"],
+      ["total_price", "NUMERIC(14,2)"],
+      ["status", "VARCHAR(50)"],
+      ["created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"]
+    ];
+
+    for (const [column, type] of orderColumns) {
+      await client.query(
+        `ALTER TABLE orders ADD COLUMN IF NOT EXISTS "${column}" ${type}`
+      );
+    }
+
+    /* =====================================================
+       DATA COMPATIBILITY
+    ===================================================== */
 
     await client.query(`
       UPDATE services
       SET price_per_1000 = price
       WHERE price_per_1000 IS NULL
-      AND price IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE services
+      SET price = price_per_1000
+      WHERE price IS NULL
     `);
 
     await client.query(`
@@ -779,9 +354,9 @@ async function initializeDatabase() {
 
     await client.query(`
       UPDATE orders
-      SET amount = total_price
-      WHERE amount IS NULL
-      AND total_price IS NOT NULL
+      SET link = target_url
+      WHERE link IS NULL
+      AND target_url IS NOT NULL
     `);
 
     await client.query(`
@@ -793,12 +368,19 @@ async function initializeDatabase() {
 
     await client.query(`
       UPDATE orders
+      SET amount = total_price
+      WHERE amount IS NULL
+      AND total_price IS NOT NULL
+    `);
+
+    await client.query(`
+      UPDATE orders
       SET status = 'pending'
       WHERE status IS NULL
     `);
 
     /* =====================================================
-       SEED SERVICES
+       SERVICE SEED / UPDATE
     ===================================================== */
 
     for (const service of SERVICES) {
@@ -863,17 +445,7 @@ async function initializeDatabase() {
             description,
             is_active
           )
-          VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $4,
-            $5,
-            $6,
-            $7,
-            TRUE
-          )
+          VALUES ($1,$2,$3,$4,$4,$5,$6,$7,TRUE)
           `,
           [
             code,
@@ -888,14 +460,26 @@ async function initializeDatabase() {
       }
     }
 
+    /* =====================================================
+       UNIQUE ORDER CODE INDEX
+    ===================================================== */
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_order_code_unique
+      ON orders(order_code)
+      WHERE order_code IS NOT NULL
+    `);
+
     await client.query("COMMIT");
 
     console.log(
-      `Database initialized successfully. ${SERVICES.length} services loaded.`
+      `Database initialized successfully. ${SERVICES.length} services ready.`
     );
 
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
 
     console.error(
       "Database initialization failed:",
@@ -910,7 +494,7 @@ async function initializeDatabase() {
 }
 
 /* =========================================================
-   BASIC API
+   ROOT
 ========================================================= */
 
 app.get("/", (req, res) => {
@@ -921,6 +505,10 @@ app.get("/", (req, res) => {
   });
 });
 
+/* =========================================================
+   API STATUS
+========================================================= */
+
 app.get("/api", (req, res) => {
   res.json({
     success: true,
@@ -928,6 +516,10 @@ app.get("/api", (req, res) => {
     status: "online"
   });
 });
+
+/* =========================================================
+   HEALTH
+========================================================= */
 
 app.get("/api/health", async (req, res) => {
   try {
@@ -951,7 +543,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 /* =========================================================
-   SERVICES API
+   SERVICES
 ========================================================= */
 
 app.get("/api/services", async (req, res) => {
@@ -988,7 +580,7 @@ app.get("/api/services", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Services error:", error);
+    console.error("Services API error:", error);
 
     res.status(500).json({
       success: false,
@@ -1003,23 +595,12 @@ app.get("/api/services", async (req, res) => {
 
 app.post("/api/orders", async (req, res) => {
   try {
-
     const serviceId = Number(req.body.serviceId);
     const quantity = Number(req.body.quantity);
 
-    const link = cleanString(
-      req.body.link,
-      2000
-    );
-
-    const phone = cleanPhone(
-      req.body.phone
-    );
-
-    const notes = cleanString(
-      req.body.notes,
-      1000
-    );
+    const link = cleanString(req.body.link, 2000);
+    const phone = cleanPhone(req.body.phone);
+    const notes = cleanString(req.body.notes, 1000);
 
     if (
       !Number.isInteger(serviceId) ||
@@ -1041,7 +622,7 @@ app.post("/api/orders", async (req, res) => {
       });
     }
 
-    if (!link || !validUrl(link)) {
+    if (!link || !isValidUrl(link)) {
       return res.status(400).json({
         success: false,
         message: "لینک واردشده معتبر نیست."
@@ -1054,8 +635,6 @@ app.post("/api/orders", async (req, res) => {
         message: "شماره تماس معتبر نیست."
       });
     }
-
-    /* GET SERVICE */
 
     const serviceResult = await pool.query(
       `
@@ -1087,10 +666,10 @@ app.post("/api/orders", async (req, res) => {
     const service = serviceResult.rows[0];
 
     const minQuantity =
-      Number(service.min_quantity || 1);
+      Number(service.min_quantity) || 1;
 
     const maxQuantity =
-      Number(service.max_quantity || 100000000);
+      Number(service.max_quantity) || 100000000;
 
     if (
       quantity < minQuantity ||
@@ -1103,107 +682,126 @@ app.post("/api/orders", async (req, res) => {
       });
     }
 
-    const unitPrice =
+    const pricePer1000 =
       Number(
         service.price_per_1000 ??
         service.price ??
         0
       );
 
-    const totalPrice = Math.round(
-      (unitPrice * quantity) / 1000
-    );
-
     if (
-      !Number.isFinite(totalPrice) ||
-      totalPrice < 0
+      !Number.isFinite(pricePer1000) ||
+      pricePer1000 < 0
     ) {
-      return res.status(400).json({
+      return res.status(500).json({
         success: false,
-        message: "قیمت سفارش معتبر نیست."
+        message: "قیمت سرویس معتبر نیست."
       });
     }
 
-    /* CREATE ORDER CODE */
-
-    const orderCode =
-      await uniqueOrderCode();
-
-    /* INSERT ORDER */
-
-    const result = await pool.query(
-      `
-      INSERT INTO orders (
-        order_code,
-        user_id,
-        service_id,
-        quantity,
-        link,
-        target_url,
-        phone,
-        notes,
-        amount,
-        total_price,
-        status
-      )
-      VALUES (
-        $1,
-        NULL,
-        $2,
-        $3,
-        $4,
-        $4,
-        $5,
-        $6,
-        $7,
-        $7,
-        'pending'
-      )
-      RETURNING
-        id,
-        order_code,
-        service_id,
-        quantity,
-        amount,
-        total_price,
-        status,
-        created_at
-      `,
-      [
-        orderCode,
-        service.id,
-        quantity,
-        link,
-        phone,
-        notes || null,
-        totalPrice
-      ]
+    const totalPrice = Math.ceil(
+      (pricePer1000 * quantity) / 1000
     );
 
-    const order =
-      result.rows[0];
+    const client = await pool.connect();
 
-    console.log(
-      `Order created successfully: ${order.order_code}`
-    );
+    try {
+      await client.query("BEGIN");
 
-    res.status(201).json({
-      success: true,
-      message: "سفارش با موفقیت ثبت شد.",
-      order: {
-        id: order.id,
-        code: order.order_code,
-        service: service.name,
-        network: service.network,
-        quantity: order.quantity,
-        amount: Number(order.amount),
-        status: order.status,
-        createdAt: order.created_at
-      }
-    });
+      const orderCode =
+        await createUniqueOrderCode(client);
+
+      const insertResult = await client.query(
+        `
+        INSERT INTO orders (
+          order_code,
+          user_id,
+          service_id,
+          quantity,
+          link,
+          target_url,
+          phone,
+          notes,
+          amount,
+          total_price,
+          status
+        )
+        VALUES (
+          $1,
+          NULL,
+          $2,
+          $3,
+          $4,
+          $4,
+          $5,
+          $6,
+          $7,
+          $7,
+          'pending'
+        )
+        RETURNING
+          id,
+          order_code,
+          service_id,
+          quantity,
+          amount,
+          total_price,
+          status,
+          created_at
+        `,
+        [
+          orderCode,
+          service.id,
+          quantity,
+          link,
+          phone,
+          notes || null,
+          totalPrice
+        ]
+      );
+
+      await client.query("COMMIT");
+
+      const order = insertResult.rows[0];
+
+      console.log(
+        `Order created: ${order.order_code}`
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "سفارش با موفقیت ثبت شد.",
+        order: {
+          id: order.id,
+          code: order.order_code,
+          order_code: order.order_code,
+          service: service.name,
+          service_name: service.name,
+          serviceCode: service.service_code,
+          network: service.network,
+          quantity: Number(order.quantity),
+          amount: Number(order.amount),
+          total_price: Number(order.total_price),
+          status: order.status,
+          createdAt: order.created_at,
+          created_at: order.created_at
+        },
+        orderCode: order.order_code,
+        code: order.order_code
+      });
+
+    } catch (error) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {}
+
+      throw error;
+
+    } finally {
+      client.release();
+    }
 
   } catch (error) {
-
     console.error(
       "Create order error:",
       error
@@ -1221,93 +819,105 @@ app.post("/api/orders", async (req, res) => {
    TRACK ORDER
 ========================================================= */
 
-app.get(
-  "/api/orders/:code",
-  async (req, res) => {
+app.get("/api/orders/:code", async (req, res) => {
+  try {
+    const code =
+      normalizeOrderCode(req.params.code);
 
-    try {
-
-      const code =
-        cleanString(
-          req.params.code,
-          50
-        ).toUpperCase();
-
-      if (!/^FC-\d{6}$/.test(code)) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "کد سفارش معتبر نیست."
-        });
-      }
-
-      const result =
-        await pool.query(
-          `
-          SELECT
-            o.id,
-            o.order_code,
-            o.quantity,
-            COALESCE(
-              o.amount,
-              o.total_price,
-              0
-            ) AS amount,
-            o.status,
-            o.created_at,
-            s.name AS service_name,
-            s.network,
-            s.service_code
-          FROM orders o
-          LEFT JOIN services s
-            ON s.id = o.service_id
-          WHERE o.order_code = $1
-          LIMIT 1
-          `,
-          [code]
-        );
-
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "سفارشی با این کد پیدا نشد."
-        });
-      }
-
-      const order =
-        result.rows[0];
-
-      res.json({
-        success: true,
-        order: {
-          id: order.id,
-          code: order.order_code,
-          service: order.service_name,
-          serviceCode: order.service_code,
-          network: order.network,
-          quantity: order.quantity,
-          amount: Number(order.amount),
-          status: order.status,
-          createdAt: order.created_at
-        }
-      });
-
-    } catch (error) {
-
-      console.error(
-        "Tracking error:",
-        error
-      );
-
-      res.status(500).json({
+    if (!/^FC-\d{6}$/.test(code)) {
+      return res.status(400).json({
         success: false,
-        message:
-          "خطا در پیگیری سفارش."
+        message: "کد سفارش معتبر نیست."
       });
     }
+
+    const result = await pool.query(
+      `
+      SELECT
+        o.id,
+        o.order_code,
+        o.quantity,
+        COALESCE(
+          o.amount,
+          o.total_price,
+          0
+        ) AS amount,
+        COALESCE(
+          o.total_price,
+          o.amount,
+          0
+        ) AS total_price,
+        o.status,
+        o.created_at,
+
+        s.name AS service_name,
+        s.service_code,
+        s.network
+
+      FROM orders o
+
+      LEFT JOIN services s
+        ON s.id = o.service_id
+
+      WHERE UPPER(o.order_code) = $1
+
+      LIMIT 1
+      `,
+      [code]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "سفارشی با این کد پیدا نشد."
+      });
+    }
+
+    const row = result.rows[0];
+
+    const order = {
+      id: row.id,
+
+      code: row.order_code,
+      order_code: row.order_code,
+
+      service: row.service_name,
+      service_name: row.service_name,
+
+      serviceCode: row.service_code,
+      service_code: row.service_code,
+
+      network: row.network,
+      network_name: row.network,
+
+      quantity: Number(row.quantity || 0),
+
+      amount: Number(row.amount || 0),
+      total_price: Number(row.total_price || 0),
+
+      status: row.status || "pending",
+
+      createdAt: row.created_at,
+      created_at: row.created_at
+    };
+
+    return res.json({
+      success: true,
+      order
+    });
+
+  } catch (error) {
+    console.error(
+      "Tracking error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "خطا در پیگیری سفارش."
+    });
   }
-);
+});
 
 /* =========================================================
    404
@@ -1316,8 +926,27 @@ app.get(
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message:
-      "مسیر موردنظر پیدا نشد."
+    message: "مسیر موردنظر پیدا نشد."
+  });
+});
+
+/* =========================================================
+   GLOBAL ERROR HANDLER
+========================================================= */
+
+app.use((error, req, res, next) => {
+  console.error(
+    "Unhandled server error:",
+    error
+  );
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  res.status(500).json({
+    success: false,
+    message: "خطای داخلی سرور."
   });
 });
 
@@ -1326,9 +955,7 @@ app.use((req, res) => {
 ========================================================= */
 
 async function startServer() {
-
   try {
-
     await initializeDatabase();
 
     app.listen(
@@ -1342,7 +969,6 @@ async function startServer() {
     );
 
   } catch (error) {
-
     console.error(
       "Server could not start because database initialization failed."
     );
