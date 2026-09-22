@@ -121,7 +121,10 @@ function normalizeText(value) {
 }
 
 function getQueryParam(name) {
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(
+    window.location.search
+  );
+
   return params.get(name);
 }
 
@@ -218,59 +221,47 @@ async function loadApiServices() {
   }
 }
 
-/* =========================================================
-   FIXED SERVICE MATCHING
-========================================================= */
-
 function getApiService(serviceCode) {
   if (!serviceCode) {
     return null;
   }
 
-  const code = normalizeText(serviceCode);
-  const numericId = Number(serviceCode);
+  const code =
+    normalizeText(serviceCode);
 
   return (
     API_SERVICES.find(service => {
-      const serviceCodeValue =
-        normalizeText(service.service_code);
-
-      const codeValue =
-        normalizeText(service.code);
-
-      const slugValue =
-        normalizeText(service.slug);
-
-      const serviceId =
-        Number(service.id);
-
       return (
-        serviceCodeValue === code ||
-        codeValue === code ||
-        slugValue === code ||
-        (
-          Number.isInteger(numericId) &&
-          numericId > 0 &&
-          serviceId === numericId
-        )
+        normalizeText(
+          service.service_code
+        ) === code ||
+        normalizeText(
+          service.code
+        ) === code ||
+        normalizeText(
+          service.slug
+        ) === code ||
+        normalizeText(
+          service.id
+        ) === code
       );
     }) || null
   );
 }
 
-/* =========================================================
-   FORCE REFRESH SERVICE FROM API
-========================================================= */
-
 async function resolveApiService(serviceCode) {
-  let service = getApiService(serviceCode);
+  if (!serviceCode) {
+    return null;
+  }
+
+  let service =
+    getApiService(serviceCode);
 
   if (service) {
     return service;
   }
 
-  const freshServices =
-    await loadApiServices();
+  await loadApiServices();
 
   service =
     getApiService(serviceCode);
@@ -279,44 +270,50 @@ async function resolveApiService(serviceCode) {
     return service;
   }
 
-  const code =
-    normalizeText(serviceCode);
-
-  const numericId =
-    Number(serviceCode);
-
-  return (
-    freshServices.find(item => {
-      const itemCode =
-        normalizeText(
-          item.service_code
-        );
-
-      const itemLegacyCode =
-        normalizeText(
-          item.code
-        );
-
-      const itemSlug =
-        normalizeText(
-          item.slug
-        );
-
-      const itemId =
-        Number(item.id);
-
-      return (
-        itemCode === code ||
-        itemLegacyCode === code ||
-        itemSlug === code ||
-        (
-          Number.isInteger(numericId) &&
-          numericId > 0 &&
-          itemId === numericId
-        )
+  try {
+    const data =
+      await apiFetch(
+        `${API_BASE}/api/services`
       );
-    }) || null
-  );
+
+    if (
+      data &&
+      data.success === true &&
+      Array.isArray(data.services)
+    ) {
+      const code =
+        normalizeText(serviceCode);
+
+      service =
+        data.services.find(item => {
+          return (
+            normalizeText(
+              item.service_code
+            ) === code ||
+            normalizeText(
+              item.code
+            ) === code ||
+            normalizeText(
+              item.slug
+            ) === code ||
+            normalizeText(
+              item.id
+            ) === code
+          );
+        }) || null;
+
+      if (service) {
+        return service;
+      }
+    }
+  } catch (error) {
+    console.error(
+      "Fresh service lookup error:",
+      error
+    );
+  }
+
+  return null;
 }
 
 function getStaticService(serviceCode) {
@@ -380,7 +377,9 @@ function setupNavigation() {
    NETWORK SELECT
 ========================================================= */
 
-function populateNetworkSelect(select) {
+function populateNetworkSelect(
+  select
+) {
   if (!select) {
     return;
   }
@@ -680,7 +679,7 @@ function setupOrder() {
         }
 
         /* ================================================
-           GET SERVICE FROM SERVER
+           LOAD SERVICE
         ================================================ */
 
         const apiService =
@@ -1112,10 +1111,6 @@ function setupTracking() {
   }
 }
 
-/* =========================================================
-   TRACKING RESULT
-========================================================= */
-
 function renderTrackingResult(
   order,
   fallbackCode,
@@ -1224,8 +1219,7 @@ function renderTrackingResult(
 
     </div>
   `;
-}
-
+       }
 /* =========================================================
    DATE
 ========================================================= */
@@ -1540,4 +1534,4 @@ if (
   );
 } else {
   initFollowCenter();
-      }
+}
