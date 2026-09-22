@@ -1,1698 +1,1478 @@
 /* =========================================================
-   FollowCenter.ir - Main JavaScript
+   FollowCenter.ir
    Complete replacement for script.js
-   ========================================================= */
+========================================================= */
 
-const API_BASE = 'https://followcenter-api.onrender.com';
+const API_BASE = "https://followcenter-api.onrender.com";
 
 /* =========================================================
-   SERVICES
-   ========================================================= */
+   SERVICE CATALOG
+========================================================= */
 
 const SERVICES = {
+  instagram: {
+    name: "Instagram",
+    faName: "اینستاگرام",
+    icon: "📸",
+    items: [
+      { id: "ig_follow", name: "خرید فالوور اینستاگرام", price: 150000 },
+      { id: "ig_like", name: "خرید لایک اینستاگرام", price: 30000 },
+      { id: "ig_view", name: "خرید ویو اینستاگرام", price: 20000 },
+      { id: "ig_story_view", name: "خرید ویو استوری اینستاگرام", price: 25000 },
+      { id: "ig_comment", name: "خرید کامنت اینستاگرام", price: 80000 },
+      { id: "ig_save", name: "خرید سیو اینستاگرام", price: 45000 },
+      { id: "ig_share", name: "خرید اشتراک‌گذاری اینستاگرام", price: 45000 },
+      { id: "ig_story_like", name: "خرید لایک استوری اینستاگرام", price: 35000 },
+      { id: "ig_live", name: "خرید ویو لایو اینستاگرام", price: 60000 },
+      { id: "ig_explore", name: "افزایش بازدید اکسپلور", price: 70000 },
+      { id: "ig_impression", name: "افزایش ایمپرشن اینستاگرام", price: 30000 },
+      { id: "ig_poll", name: "تعامل نظرسنجی اینستاگرام", price: 50000 },
+      { id: "ig_video_view", name: "خرید ویو ویدیو اینستاگرام", price: 22000 },
+      { id: "ig_repost", name: "خرید ری‌پست اینستاگرام", price: 50000 },
+      { id: "ig_comment_like", name: "لایک کامنت اینستاگرام", price: 40000 },
+      { id: "ig_channel_member", name: "عضو کانال اینستاگرام", price: 160000 }
+    ]
+  },
 
-    instagram: {
-        name: 'Instagram',
-        faName: 'اینستاگرام',
-        icon: '📸',
-        items: [
-            {
-                id: 'ig_follow',
-                name: 'خرید فالوور اینستاگرام',
-                price: 150000
-            },
-            {
-                id: 'ig_like',
-                name: 'خرید لایک اینستاگرام',
-                price: 30000
-            },
-            {
-                id: 'ig_view',
-                name: 'خرید ویو اینستاگرام',
-                price: 20000
-            },
-            {
-                id: 'ig_story_view',
-                name: 'خرید ویو استوری اینستاگرام',
-                price: 25000
-            },
-            {
-                id: 'ig_comment',
-                name: 'خرید کامنت اینستاگرام',
-                price: 80000
-            },
-            {
-                id: 'ig_save',
-                name: 'خرید سیو اینستاگرام',
-                price: 45000
-            },
-            {
-                id: 'ig_share',
-                name: 'خرید اشتراک‌گذاری اینستاگرام',
-                price: 45000
-            },
-            {
-                id: 'ig_story_like',
-                name: 'خرید لایک استوری اینستاگرام',
-                price: 35000
-            },
-            {
-                id: 'ig_live',
-                name: 'خرید ویو لایو اینستاگرام',
-                price: 60000
-            },
-            {
-                id: 'ig_explore',
-                name: 'افزایش بازدید اکسپلور',
-                price: 70000
-            },
-            {
-                id: 'ig_impression',
-                name: 'افزایش ایمپرشن اینستاگرام',
-                price: 30000
-            },
-            {
-                id: 'ig_poll',
-                name: 'تعامل نظرسنجی اینستاگرام',
-                price: 50000
-            }
-        ]
-    },
+  telegram: {
+    name: "Telegram",
+    faName: "تلگرام",
+    icon: "✈️",
+    items: [
+      { id: "tg_channel", name: "افزایش ممبر کانال تلگرام", price: 180000 },
+      { id: "tg_group", name: "افزایش ممبر گروه تلگرام", price: 180000 },
+      { id: "tg_view", name: "خرید ویو تلگرام", price: 25000 },
+      { id: "tg_story", name: "خرید ویو استوری تلگرام", price: 30000 },
+      { id: "tg_reaction", name: "خرید ری‌اکشن تلگرام", price: 35000 },
+      { id: "tg_like", name: "خرید لایک تلگرام", price: 35000 },
+      { id: "tg_share", name: "خرید اشتراک‌گذاری تلگرام", price: 30000 },
+      { id: "tg_ads", name: "تبلیغات تلگرام", price: 220000 },
+      { id: "tg_poll", name: "رأی نظرسنجی تلگرام", price: 40000 },
+      { id: "tg_premium", name: "خدمات تلگرام پریمیوم", price: 260000 },
+      { id: "tg_story_like", name: "لایک استوری تلگرام", price: 30000 },
+      { id: "tg_boost", name: "بوست تلگرام", price: 200000 },
+      { id: "tg_star", name: "استار تلگرام", price: 400000 },
+      { id: "tg_gift", name: "گیفت تلگرام", price: 300000 },
+      { id: "tg_reaction_positive", name: "ری‌اکشن مثبت تلگرام", price: 20000 },
+      { id: "tg_reaction_negative", name: "ری‌اکشن منفی تلگرام", price: 20000 }
+    ]
+  },
 
-    telegram: {
-        name: 'Telegram',
-        faName: 'تلگرام',
-        icon: '✈️',
-        items: [
-            {
-                id: 'tg_channel',
-                name: 'افزایش ممبر کانال تلگرام',
-                price: 180000
-            },
-            {
-                id: 'tg_group',
-                name: 'افزایش ممبر گروه تلگرام',
-                price: 180000
-            },
-            {
-                id: 'tg_view',
-                name: 'خرید ویو تلگرام',
-                price: 25000
-            },
-            {
-                id: 'tg_story',
-                name: 'خرید ویو استوری تلگرام',
-                price: 30000
-            },
-            {
-                id: 'tg_reaction',
-                name: 'خرید ری‌اکشن تلگرام',
-                price: 35000
-            },
-            {
-                id: 'tg_like',
-                name: 'خرید لایک تلگرام',
-                price: 35000
-            },
-            {
-                id: 'tg_share',
-                name: 'خرید اشتراک‌گذاری تلگرام',
-                price: 30000
-            },
-            {
-                id: 'tg_ads',
-                name: 'تبلیغات تلگرام',
-                price: 220000
-            },
-            {
-                id: 'tg_poll',
-                name: 'تعامل نظرسنجی تلگرام',
-                price: 40000
-            },
-            {
-                id: 'tg_premium',
-                name: 'خدمات تلگرام پریمیوم',
-                price: 260000
-            }
-        ]
-    },
+  rubika: {
+    name: "Rubika",
+    faName: "روبیکا",
+    icon: "🟣",
+    items: [
+      { id: "rb_follow", name: "خرید دنبال‌کننده روبیکا", price: 140000 },
+      { id: "rb_like", name: "خرید لایک روبیکا", price: 30000 },
+      { id: "rb_view", name: "خرید ویو روبیکا", price: 20000 },
+      { id: "rb_comment", name: "خرید کامنت روبیکا", price: 50000 },
+      { id: "rb_share", name: "خرید اشتراک‌گذاری روبیکا", price: 35000 }
+    ]
+  },
 
-    rubika: {
-        name: 'Rubika',
-        faName: 'روبیکا',
-        icon: '🟣',
-        items: [
-            {
-                id: 'rb_follow',
-                name: 'خرید دنبال‌کننده روبیکا',
-                price: 140000
-            },
-            {
-                id: 'rb_like',
-                name: 'خرید لایک روبیکا',
-                price: 30000
-            },
-            {
-                id: 'rb_view',
-                name: 'خرید ویو روبیکا',
-                price: 20000
-            }
-        ]
-    },
-
-    eitaa: {
-        name: 'Eitaa',
-        faName: 'ایتا',
-        icon: '🔵',
-        items: [
-            {
-                id: 'et_channel',
-                name: 'افزایش ممبر کانال ایتا',
-                price: 150000
-            },
-            {
-                id: 'et_group',
-                name: 'افزایش ممبر گروه ایتا',
-                price: 150000
-            },
-            {
-                id: 'et_view',
-                name: 'خرید ویو ایتا',
-                price: 20000
-            },
-            {
-                id: 'et_ads',
-                name: 'تبلیغات ایتا',
-                price: 250000
-            },
-            {
-                id: 'et_directory',
-                name: 'افزایش بازدید دایرکتوری ایتا',
-                price: 80000
-            }
-        ]
-    }
+  eitaa: {
+    name: "Eitaa",
+    faName: "ایتا",
+    icon: "🔵",
+    items: [
+      { id: "ea_channel", name: "افزایش ممبر کانال ایتا", price: 150000 },
+      { id: "ea_group", name: "افزایش ممبر گروه ایتا", price: 150000 },
+      { id: "ea_view", name: "خرید ویو ایتا", price: 20000 },
+      { id: "ea_ads", name: "تبلیغات ایتا", price: 250000 },
+      { id: "ea_directory", name: "افزایش بازدید دایرکتوری ایتا", price: 80000 },
+      { id: "ea_like", name: "خرید لایک ایتا", price: 30000 },
+      { id: "ea_comment", name: "خرید کامنت ایتا", price: 50000 }
+    ]
+  }
 };
-
-
-/* =========================================================
-   ALL SERVICES
-   ========================================================= */
-
-const allServices = Object.entries(SERVICES).flatMap(
-    ([networkKey, network]) =>
-        network.items.map(service => ({
-            ...service,
-            network: networkKey,
-            networkName: network.faName
-        }))
-);
-
-
-/* =========================================================
-   API SERVICES
-   ========================================================= */
-
-let API_SERVICES = [];
-let API_SERVICES_LOADED = false;
-
 
 /* =========================================================
    HELPERS
-   ========================================================= */
+========================================================= */
 
 function escapeHTML(value) {
-    if (value === null || value === undefined) return '';
+  if (value === null || value === undefined) {
+    return "";
+  }
 
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
-
 
 function formatPrice(value) {
-    const number = Number(value) || 0;
-
-    return number.toLocaleString('fa-IR') + ' تومان';
+  const number = Number(value) || 0;
+  return number.toLocaleString("fa-IR") + " تومان";
 }
-
 
 function formatNumber(value) {
-    const number = Number(value) || 0;
-
-    return number.toLocaleString('fa-IR');
+  const number = Number(value) || 0;
+  return number.toLocaleString("fa-IR");
 }
-
 
 function normalizeText(value) {
-    return String(value || '')
-        .trim()
-        .toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
-
 
 function getQueryParam(name) {
-    const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(
+    window.location.search
+  );
 
-    return params.get(name);
+  return params.get(name);
 }
 
-
 /* =========================================================
-   API FETCH
-   ========================================================= */
+   API
+========================================================= */
 
 async function apiFetch(url, options = {}) {
+  const controller = new AbortController();
 
-    const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 15000);
 
-    const timeout = setTimeout(() => {
-        controller.abort();
-    }, 15000);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...(options.body
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(options.headers || {})
+      }
+    });
+
+    let data = null;
 
     try {
-
-        const response = await fetch(url, {
-            ...options,
-            signal: controller.signal,
-            headers: {
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-            }
-        });
-
-        let data = null;
-
-        try {
-            data = await response.json();
-        } catch {
-            data = null;
-        }
-
-        if (!response.ok) {
-
-            const message =
-                data?.message ||
-                data?.error ||
-                `خطای سرور (${response.status})`;
-
-            throw new Error(message);
-        }
-
-        return data;
-
-    } catch (error) {
-
-        if (error.name === 'AbortError') {
-            throw new Error('زمان پاسخ سرور تمام شد. دوباره تلاش کنید.');
-        }
-
-        throw error;
-
-    } finally {
-
-        clearTimeout(timeout);
+      data = await response.json();
+    } catch {
+      data = null;
     }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message ||
+        data?.error ||
+        `خطای سرور (${response.status})`
+      );
+    }
+
+    return data;
+
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(
+        "زمان پاسخ سرور تمام شد. دوباره تلاش کنید."
+      );
+    }
+
+    throw error;
+
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-
 /* =========================================================
-   LOAD SERVICES FROM DATABASE
-   ========================================================= */
+   API SERVICES
+========================================================= */
+
+let API_SERVICES = [];
 
 async function loadApiServices() {
+  try {
+    const data = await apiFetch(
+      `${API_BASE}/api/services`
+    );
 
-    try {
-
-        const data = await apiFetch(
-            `${API_BASE}/api/services`
+    if (
+      data &&
+      data.success === true &&
+      Array.isArray(data.services)
+    ) {
+      API_SERVICES =
+        data.services.filter(
+          service =>
+            service.is_active !== false
         );
 
-        if (
-            data &&
-            data.success &&
-            Array.isArray(data.services)
-        ) {
-
-            API_SERVICES = data.services.filter(
-                service => service.is_active !== false
-            );
-
-            API_SERVICES_LOADED = true;
-
-            return API_SERVICES;
-        }
-
-        API_SERVICES = [];
-        API_SERVICES_LOADED = false;
-
-        return [];
-
-    } catch (error) {
-
-        console.warn(
-            'Could not load API services:',
-            error
-        );
-
-        API_SERVICES = [];
-        API_SERVICES_LOADED = false;
-
-        return [];
+      return API_SERVICES;
     }
+
+    return [];
+
+  } catch (error) {
+    console.warn(
+      "Could not load API services:",
+      error
+    );
+
+    return [];
+  }
 }
-
-
-/* =========================================================
-   FIND DATABASE SERVICE
-   ========================================================= */
 
 function getApiService(serviceCode) {
+  if (!serviceCode) {
+    return null;
+  }
 
-    if (!serviceCode) return null;
+  const code =
+    normalizeText(serviceCode);
 
-    const code = normalizeText(serviceCode);
-
-    return API_SERVICES.find(service => {
-
-        const possibleCodes = [
-            service.service_code,
-            service.code,
-            service.slug,
-            service.key,
-            service.serviceCode,
-            service.service_id
-        ];
-
-        return possibleCodes.some(
-            value => normalizeText(value) === code
-        );
-
-    }) || null;
+  return (
+    API_SERVICES.find(service => {
+      return (
+        normalizeText(
+          service.service_code
+        ) === code ||
+        normalizeText(
+          service.code
+        ) === code ||
+        normalizeText(
+          service.slug
+        ) === code
+      );
+    }) || null
+  );
 }
-
-
-/* =========================================================
-   FIND DATABASE SERVICE ID
-   ========================================================= */
-
-function getDatabaseServiceId(serviceCode) {
-
-    const service = getApiService(serviceCode);
-
-    if (!service) return null;
-
-    const id =
-        service.id ??
-        service.service_id ??
-        service.serviceId;
-
-    const numberId = Number(id);
-
-    if (!Number.isFinite(numberId)) {
-        return null;
-    }
-
-    return numberId;
-}
-
-
-/* =========================================================
-   STATIC SERVICE
-   ========================================================= */
 
 function getStaticService(serviceCode) {
-
-    return allServices.find(
+  for (
+    const [networkKey, network]
+    of Object.entries(SERVICES)
+  ) {
+    const found =
+      network.items.find(
         service =>
-            normalizeText(service.id) ===
-            normalizeText(serviceCode)
-    ) || null;
-}
+          normalizeText(service.id) ===
+          normalizeText(serviceCode)
+      );
 
+    if (found) {
+      return {
+        ...found,
+        network: networkKey,
+        networkName: network.faName
+      };
+    }
+  }
+
+  return null;
+}
 
 /* =========================================================
    NAVIGATION
-   ========================================================= */
+========================================================= */
 
 function setupNavigation() {
-
-    const menuButton =
-        document.querySelector(
-            '#menuToggle, .menu-toggle, .hamburger'
-        );
-
-    const nav =
-        document.querySelector(
-            '#mainNav, .main-nav, nav'
-        );
-
-    if (!menuButton || !nav) return;
-
-    menuButton.addEventListener('click', () => {
-
-        nav.classList.toggle('active');
-
-        menuButton.classList.toggle('active');
-    });
-}
-
-
-/* =========================================================
-   SERVICE CARDS
-   ========================================================= */
-
-function setupServiceCards() {
-
-    const containers =
-        document.querySelectorAll(
-            '[data-service], .service-card'
-        );
-
-    containers.forEach(card => {
-
-        card.addEventListener('click', () => {
-
-            const serviceId =
-                card.dataset.service ||
-                card.dataset.serviceId;
-
-            if (!serviceId) return;
-
-            window.location.href =
-                `order.html?service=${encodeURIComponent(serviceId)}`;
-        });
-
-    });
-}
-
-
-/* =========================================================
-   POPULATE NETWORK SELECT
-   ========================================================= */
-
-function populateNetworkSelect(select) {
-
-    if (!select) return;
-
-    select.innerHTML =
-        '<option value="">انتخاب شبکه</option>';
-
-    Object.entries(SERVICES).forEach(
-        ([key, network]) => {
-
-            const option =
-                document.createElement('option');
-
-            option.value = key;
-
-            option.textContent =
-                `${network.icon} ${network.faName}`;
-
-            select.appendChild(option);
-        }
+  const button =
+    document.querySelector(
+      ".mobile-toggle"
     );
-}
 
+  const nav =
+    document.querySelector(
+      ".menu"
+    );
 
-/* =========================================================
-   POPULATE SERVICE SELECT
-   ========================================================= */
+  if (!button || !nav) {
+    return;
+  }
 
-function populateServiceSelect(select, networkKey) {
+  button.addEventListener(
+    "click",
+    () => {
+      nav.classList.toggle(
+        "active"
+      );
 
-    if (!select) return;
-
-    select.innerHTML =
-        '<option value="">انتخاب سرویس</option>';
-
-    if (!networkKey || !SERVICES[networkKey]) {
-        return;
+      button.classList.toggle(
+        "active"
+      );
     }
-
-    SERVICES[networkKey].items.forEach(service => {
-
-        const option =
-            document.createElement('option');
-
-        option.value = service.id;
-
-        option.textContent =
-            service.name;
-
-        option.dataset.price =
-            service.price;
-
-        select.appendChild(option);
-    });
+  );
 }
 
+/* =========================================================
+   NETWORK SELECT
+========================================================= */
+
+function populateNetworkSelect(
+  select
+) {
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML =
+    '<option value="">انتخاب شبکه</option>';
+
+  Object.entries(
+    SERVICES
+  ).forEach(
+    ([key, network]) => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value = key;
+
+      option.textContent =
+        `${network.icon} ${network.faName}`;
+
+      select.appendChild(
+        option
+      );
+    }
+  );
+}
 
 /* =========================================================
-   SET PRICE
-   ========================================================= */
+   SERVICE SELECT
+========================================================= */
+
+function populateServiceSelect(
+  select,
+  networkKey
+) {
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML =
+    '<option value="">انتخاب سرویس</option>';
+
+  if (
+    !networkKey ||
+    !SERVICES[networkKey]
+  ) {
+    return;
+  }
+
+  SERVICES[
+    networkKey
+  ].items.forEach(
+    service => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        service.id;
+
+      option.textContent =
+        service.name;
+
+      option.dataset.price =
+        String(service.price);
+
+      select.appendChild(
+        option
+      );
+    }
+  );
+}
+
+/* =========================================================
+   ORDER PRICE
+========================================================= */
 
 function updateOrderPrice() {
+  const serviceSelect =
+    document.querySelector(
+      "#service"
+    );
 
-    const serviceSelect =
-        document.querySelector(
-            '#service, #serviceSelect, select[name="service"]'
-        );
+  const quantityInput =
+    document.querySelector(
+      "#quantity"
+    );
 
-    const quantityInput =
-        document.querySelector(
-            '#quantity, input[name="quantity"]'
-        );
+  const totalElement =
+    document.querySelector(
+      "#total"
+    );
 
-    const priceElement =
-        document.querySelector(
-            '#totalPrice, #price, .total-price, [data-total-price]'
-        );
+  if (
+    !serviceSelect ||
+    !quantityInput ||
+    !totalElement
+  ) {
+    return;
+  }
 
-    if (!serviceSelect || !quantityInput) return;
+  const serviceCode =
+    serviceSelect.value;
 
-    const serviceId =
-        serviceSelect.value;
+  const quantity =
+    Number(
+      quantityInput.value
+    ) || 0;
 
-    const quantity =
-        Number(quantityInput.value) || 0;
+  if (
+    !serviceCode ||
+    quantity <= 0
+  ) {
+    totalElement.textContent =
+      "۰ تومان";
 
-    const service =
-        getStaticService(serviceId);
+    return;
+  }
 
-    if (!service || quantity <= 0) {
+  const apiService =
+    getApiService(
+      serviceCode
+    );
 
-        if (priceElement) {
-            priceElement.textContent =
-                '۰ تومان';
-        }
+  const staticService =
+    getStaticService(
+      serviceCode
+    );
 
-        return;
-    }
+  const pricePer1000 =
+    Number(
+      apiService?.price_per_1000 ??
+      apiService?.price ??
+      staticService?.price ??
+      0
+    );
 
-    /*
-       قیمت‌ها برای 1000 واحد هستند.
-    */
+  const total =
+    Math.ceil(
+      (pricePer1000 *
+        quantity) /
+      1000
+    );
 
-    const total =
-        Math.ceil(
-            (service.price * quantity) / 1000
-        );
-
-    if (priceElement) {
-
-        priceElement.textContent =
-            formatPrice(total);
-    }
-
-    const hiddenPrice =
-        document.querySelector(
-            '#total, input[name="total"]'
-        );
-
-    if (hiddenPrice) {
-        hiddenPrice.value = total;
-    }
+  totalElement.textContent =
+    formatPrice(total);
 }
-
 
 /* =========================================================
    ORDER PAGE
-   ========================================================= */
-
-async function setupOrder() {
-
-    const orderForm =
-        document.querySelector(
-            '#orderForm, form[data-order-form]'
-        );
-
-    if (!orderForm) return;
-
-    const networkSelect =
-        document.querySelector(
-            '#network, #networkSelect, select[name="network"]'
-        );
-
-    const serviceSelect =
-        document.querySelector(
-            '#service, #serviceSelect, select[name="service"]'
-        );
-
-    const quantityInput =
-        document.querySelector(
-            '#quantity, input[name="quantity"]'
-        );
-
-    const linkInput =
-        document.querySelector(
-            '#link, input[name="link"], input[type="url"]'
-        );
-
-    const phoneInput =
-        document.querySelector(
-            '#phone, input[name="phone"], input[type="tel"]'
-        );
-
-    const notesInput =
-        document.querySelector(
-            '#notes, textarea[name="notes"]'
-        );
-
-    const messageElement =
-        document.querySelector(
-            '#orderMessage, #message, .order-message'
-        );
-
-    const submitButton =
-        orderForm.querySelector(
-            'button[type="submit"]'
-        );
-
-
-    /* Load database services */
-
-    await loadApiServices();
-
-
-    /* Network */
-
-    if (networkSelect) {
-
-        populateNetworkSelect(networkSelect);
-
-        networkSelect.addEventListener(
-            'change',
-            () => {
-
-                populateServiceSelect(
-                    serviceSelect,
-                    networkSelect.value
-                );
-
-                updateOrderPrice();
-            }
-        );
-    }
-
-
-    /* Service */
-
-    if (serviceSelect) {
-
-        serviceSelect.addEventListener(
-            'change',
-            updateOrderPrice
-        );
-    }
-
-
-    /* Quantity */
-
-    if (quantityInput) {
-
-        quantityInput.addEventListener(
-            'input',
-            updateOrderPrice
-        );
-    }
-
-
-    /* URL service parameter */
-
-    const requestedService =
-        getQueryParam('service');
-
-    if (requestedService && serviceSelect) {
-
-        const staticService =
-            getStaticService(requestedService);
-
-        if (staticService && networkSelect) {
-
-            networkSelect.value =
-                staticService.network;
-
-            populateServiceSelect(
-                serviceSelect,
-                staticService.network
-            );
-
-            serviceSelect.value =
-                staticService.id;
-
-            updateOrderPrice();
-        }
-    }
-
-
-    /* Submit */
-
-    orderForm.addEventListener(
-        'submit',
-        async event => {
-
-            event.preventDefault();
-
-
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.dataset.oldText =
-                    submitButton.textContent;
-
-                submitButton.textContent =
-                    'در حال ثبت سفارش...';
-            }
-
-
-            if (messageElement) {
-                messageElement.textContent = '';
-                messageElement.className =
-                    'order-message';
-            }
-
-
-            try {
-
-                const selectedService =
-                    serviceSelect?.value;
-
-                const quantity =
-                    Number(quantityInput?.value);
-
-                const link =
-                    linkInput?.value.trim();
-
-                const phone =
-                    phoneInput?.value.trim();
-
-                const notes =
-                    notesInput?.value.trim() || '';
-
-
-                /* Validation */
-
-                if (!selectedService) {
-                    throw new Error(
-                        'لطفاً سرویس را انتخاب کنید.'
-                    );
-                }
-
-                if (
-                    !Number.isFinite(quantity) ||
-                    quantity <= 0
-                ) {
-                    throw new Error(
-                        'لطفاً تعداد صحیح وارد کنید.'
-                    );
-                }
-
-                if (!link) {
-                    throw new Error(
-                        'لطفاً لینک موردنظر را وارد کنید.'
-                    );
-                }
-
-                if (!phone) {
-                    throw new Error(
-                        'لطفاً شماره موبایل را وارد کنید.'
-                    );
-                }
-
-
-                /*
-                   Find database service.
-                */
-
-                let apiService =
-                    getApiService(selectedService);
-
-
-                /*
-                   If service wasn't loaded,
-                   load again.
-                */
-
-                if (!apiService) {
-
-                    await loadApiServices();
-
-                    apiService =
-                        getApiService(
-                            selectedService
-                        );
-                }
-
-
-                /*
-                   IMPORTANT:
-                   Send DATABASE ID, not static ID.
-                */
-
-                const databaseServiceId =
-                    apiService
-                        ? Number(
-                            apiService.id ??
-                            apiService.service_id ??
-                            apiService.serviceId
-                        )
-                        : null;
-
-
-                if (
-                    !apiService ||
-                    !Number.isFinite(
-                        databaseServiceId
-                    )
-                ) {
-
-                    throw new Error(
-                        'سرویس انتخاب شده در سرور پیدا نشد. لطفاً صفحه را تازه‌سازی کنید و دوباره تلاش کنید.'
-                    );
-                }
-
-
-                /* Order data */
-
-                const orderData = {
-
-                    serviceId:
-                        databaseServiceId,
-
-                    quantity:
-                        quantity,
-
-                    link:
-                        link,
-
-                    phone:
-                        phone,
-
-                    notes:
-                        notes
-                };
-
-
-                /* Send order */
-
-                const result =
-                    await apiFetch(
-                        `${API_BASE}/api/orders`,
-                        {
-                            method: 'POST',
-                            body:
-                                JSON.stringify(
-                                    orderData
-                                )
-                        }
-                    );
-
-
-                /*
-                   Success
-                */
-
-                if (
-                    result &&
-                    (
-                        result.success === true ||
-                        result.order ||
-                        result.orderCode ||
-                        result.code
-                    )
-                ) {
-
-                    const order =
-                        result.order || {};
-
-                    const orderCode =
-                        result.orderCode ||
-                        result.code ||
-                        order.order_code ||
-                        order.orderCode ||
-                        order.code ||
-                        '';
-
-
-                    if (messageElement) {
-
-                        messageElement.className =
-                            'order-message success';
-
-                        messageElement.innerHTML =
-                            `
-                            <div>
-                                <strong>✅ سفارش با موفقیت ثبت شد</strong>
-                            </div>
-
-                            ${
-                                orderCode
-                                    ? `
-                                    <div style="margin-top:8px">
-                                        کد پیگیری:
-                                        <strong>${escapeHTML(orderCode)}</strong>
-                                    </div>
-                                    `
-                                    : ''
-                            }
-                            `;
-                    }
-
-
-                    /*
-                       Save last order code
-                    */
-
-                    if (orderCode) {
-
-                        try {
-
-                            localStorage.setItem(
-                                'followcenter_last_order',
-                                orderCode
-                            );
-
-                        } catch {}
-                    }
-
-
-                    /*
-                       Reset form
-                    */
-
-                    orderForm.reset();
-
-                    if (serviceSelect) {
-                        serviceSelect.innerHTML =
-                            '<option value="">انتخاب سرویس</option>';
-                    }
-
-                    if (networkSelect) {
-                        networkSelect.value = '';
-                    }
-
-                    updateOrderPrice();
-
-
-                    /*
-                       Optional redirect to tracking
-                    */
-
-                    if (orderCode) {
-
-                        setTimeout(() => {
-
-                            window.location.href =
-                                `tracking.html?code=${encodeURIComponent(orderCode)}`;
-
-                        }, 1800);
-                    }
-
-                } else {
-
-                    throw new Error(
-                        result?.message ||
-                        result?.error ||
-                        'ثبت سفارش انجام نشد.'
-                    );
-                }
-
-            } catch (error) {
-
-                console.error(
-                    'Order error:',
-                    error
-                );
-
-
-                if (messageElement) {
-
-                    messageElement.className =
-                        'order-message error';
-
-                    messageElement.textContent =
-                        `❌ ${error.message}`;
-                }
-
-            } finally {
-
-                if (submitButton) {
-
-                    submitButton.disabled = false;
-
-                    submitButton.textContent =
-                        submitButton.dataset.oldText ||
-                        'ثبت سفارش';
-                }
-            }
-
-        }
-    );
-}
-
-
-/* =========================================================
-   TRACKING PAGE
-   ========================================================= */
-
-async function setupTracking() {
-
-    const form =
-        document.querySelector(
-            '#trackingForm, form[data-tracking-form]'
-        );
-
-    const input =
-        document.querySelector(
-            '#trackingCode, #orderCode, input[name="trackingCode"], input[name="code"]'
-        );
-
-    const resultElement =
-        document.querySelector(
-            '#trackingResult, #result, .tracking-result'
-        );
-
-    if (!form || !input) return;
-
-
-    /*
-       Read code from URL
-    */
-
-    const urlCode =
-        getQueryParam('code') ||
-        getQueryParam('order');
-
-    if (urlCode) {
-
-        input.value =
-            urlCode;
-
-        setTimeout(() => {
-            searchOrder(urlCode);
-        }, 200);
-    }
-
-
-    form.addEventListener(
-        'submit',
-        async event => {
-
-            event.preventDefault();
-
-            const code =
-                input.value.trim();
-
-            await searchOrder(code);
-        }
+========================================================= */
+
+function setupOrder() {
+  const form =
+    document.querySelector(
+      "#orderForm"
     );
 
+  if (!form) {
+    return;
+  }
 
-    async function searchOrder(code) {
+  const networkSelect =
+    document.querySelector(
+      "#network"
+    );
 
-        if (!code) {
+  const serviceSelect =
+    document.querySelector(
+      "#service"
+    );
 
-            showTrackingError(
-                'لطفاً کد پیگیری را وارد کنید.'
-            );
+  const quantityInput =
+    document.querySelector(
+      "#quantity"
+    );
 
-            return;
-        }
+  const linkInput =
+    document.querySelector(
+      "#link"
+    );
 
+  const phoneInput =
+    document.querySelector(
+      "#phone"
+    );
 
-        /*
-           Accept:
-           FC-123456
-           fc-123456
-        */
+  const notesInput =
+    document.querySelector(
+      "#notes"
+    );
 
-        const normalizedCode =
-            code.toUpperCase();
+  const totalElement =
+    document.querySelector(
+      "#total"
+    );
 
+  const messageElement =
+    document.querySelector(
+      "#success, #orderMessage, .order-message"
+    );
 
-        if (
-            !/^FC-\d{6}$/.test(
-                normalizedCode
-            )
-        ) {
+  const submitButton =
+    form.querySelector(
+      'button[type="submit"]'
+    );
 
-            showTrackingError(
-                'کد پیگیری باید مانند FC-123456 باشد.'
-            );
+  /* =====================================================
+     SUBMIT LISTENER
+     مهم: قبل از loadApiServices
+  ===================================================== */
 
-            return;
-        }
+  form.addEventListener(
+    "submit",
+    async event => {
+      event.preventDefault();
 
+      if (
+        !serviceSelect ||
+        !quantityInput ||
+        !linkInput ||
+        !phoneInput
+      ) {
+        return;
+      }
 
-        if (resultElement) {
+      if (submitButton) {
+        submitButton.disabled =
+          true;
 
-            resultElement.innerHTML =
-                '<p>⏳ در حال دریافت اطلاعات سفارش...</p>';
-        }
+        submitButton.dataset.oldText =
+          submitButton.textContent;
 
+        submitButton.textContent =
+          "در حال ثبت سفارش...";
+      }
 
-        try {
+      if (messageElement) {
+        messageElement.innerHTML =
+          "";
 
-            const data =
-                await apiFetch(
-                    `${API_BASE}/api/orders/${encodeURIComponent(normalizedCode)}`
-                );
+        messageElement.className =
+          "";
+      }
 
-
-            const order =
-                data?.order ||
-                data?.data ||
-                data;
-
-
-            if (
-                !data ||
-                data.success === false ||
-                !order
-            ) {
-
-                throw new Error(
-                    data?.message ||
-                    data?.error ||
-                    'سفارش پیدا نشد.'
-                );
-            }
-
-
-            renderTrackingResult(
-                order,
-                normalizedCode
-            );
-
-        } catch (error) {
-
-            console.error(
-                'Tracking error:',
-                error
-            );
-
-            showTrackingError(
-                error.message ||
-                'خطا در دریافت سفارش.'
-            );
-        }
-    }
-
-
-    function showTrackingError(message) {
-
-        if (!resultElement) return;
-
-        resultElement.innerHTML =
-            `
-            <div class="tracking-error">
-                ❌ ${escapeHTML(message)}
-            </div>
-            `;
-    }
-
-
-    function renderTrackingResult(
-        order,
-        fallbackCode
-    ) {
-
-        if (!resultElement) return;
-
-
-        const code =
-            order.order_code ||
-            order.orderCode ||
-            order.code ||
-            fallbackCode;
-
-
-        const network =
-            order.network_name ||
-            order.networkName ||
-            order.network ||
-            '-';
-
-
-        const service =
-            order.service_name ||
-            order.serviceName ||
-            order.service ||
-            '-';
-
+      try {
+        const serviceCode =
+          serviceSelect.value;
 
         const quantity =
-            order.quantity ||
-            0;
+          Number(
+            quantityInput.value
+          );
 
+        const link =
+          linkInput.value.trim();
 
-        const amount =
-            order.amount ??
-            order.total_amount ??
-            order.totalAmount ??
-            order.price ??
-            0;
+        const phone =
+          phoneInput.value.trim();
 
+        const notes =
+          notesInput?.value.trim() ||
+          "";
 
-        const status =
-            order.status ||
-            'pending';
+        /* ================================================
+           VALIDATION
+        ================================================ */
 
-
-        const createdAt =
-            order.created_at ||
-            order.createdAt ||
-            order.date ||
-            '';
-
-
-        resultElement.innerHTML =
-            `
-            <div class="tracking-card">
-
-                <div class="tracking-header">
-                    <h3>📦 اطلاعات سفارش</h3>
-
-                    <div class="tracking-code">
-                        ${escapeHTML(code)}
-                    </div>
-                </div>
-
-
-                <div class="tracking-row">
-                    <span>وضعیت</span>
-                    <strong>
-                        ${statusBadge(status)}
-                    </strong>
-                </div>
-
-
-                <div class="tracking-row">
-                    <span>شبکه</span>
-                    <strong>
-                        ${escapeHTML(network)}
-                    </strong>
-                </div>
-
-
-                <div class="tracking-row">
-                    <span>سرویس</span>
-                    <strong>
-                        ${escapeHTML(service)}
-                    </strong>
-                </div>
-
-
-                <div class="tracking-row">
-                    <span>تعداد</span>
-                    <strong>
-                        ${formatNumber(quantity)}
-                    </strong>
-                </div>
-
-
-                <div class="tracking-row">
-                    <span>مبلغ</span>
-                    <strong>
-                        ${formatPrice(amount)}
-                    </strong>
-                </div>
-
-
-                ${
-                    createdAt
-                        ? `
-                        <div class="tracking-row">
-                            <span>تاریخ ثبت</span>
-                            <strong>
-                                ${escapeHTML(
-                                    formatDate(createdAt)
-                                )}
-                            </strong>
-                        </div>
-                        `
-                        : ''
-                }
-
-            </div>
-            `;
-    }
-}
-
-
-/* =========================================================
-   FORMAT DATE
-   ========================================================= */
-
-function formatDate(value) {
-
-    if (!value) return '-';
-
-    const date =
-        new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return String(value);
-    }
-
-    return date.toLocaleString(
-        'fa-IR',
-        {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+        if (!serviceCode) {
+          throw new Error(
+            "لطفاً سرویس را انتخاب کنید."
+          );
         }
-    );
-}
-
-
-/* =========================================================
-   STATUS BADGE
-   ========================================================= */
-
-function statusBadge(status) {
-
-    const normalized =
-        normalizeText(status);
-
-
-    let text =
-        'در انتظار';
-
-    let className =
-        'pending';
-
-
-    if (
-        normalized === 'running' ||
-        normalized === 'processing' ||
-        normalized === 'in_progress'
-    ) {
-
-        text =
-            'در حال انجام';
-
-        className =
-            'running';
-
-    } else if (
-        normalized === 'done' ||
-        normalized === 'completed' ||
-        normalized === 'complete'
-    ) {
-
-        text =
-            'تکمیل شده';
-
-        className =
-            'done';
-
-    } else if (
-        normalized === 'cancelled' ||
-        normalized === 'canceled'
-    ) {
-
-        text =
-            'لغو شده';
-
-        className =
-            'cancelled';
-
-    } else if (
-        normalized === 'failed' ||
-        normalized === 'error'
-    ) {
-
-        text =
-            'ناموفق';
-
-        className =
-            'cancelled';
-
-    } else if (
-        normalized === 'pending' ||
-        normalized === 'waiting'
-    ) {
-
-        text =
-            'در انتظار';
-
-        className =
-            'pending';
-    }
-
-
-    return `
-        <span class="status-badge ${className}">
-            ${text}
-        </span>
-    `;
-}
-
-
-/* =========================================================
-   CUSTOMER ORDERS PAGE
-   ========================================================= */
-
-function setupOrdersPage() {
-
-    const container =
-        document.querySelector(
-            '#ordersList, .orders-list, [data-orders]'
-        );
-
-    if (!container) return;
-
-    renderOrders(container);
-}
-
-
-function renderOrders(container) {
-
-    container.innerHTML =
-        `
-        <div class="orders-empty">
-
-            <div style="font-size:42px">
-                📦
-            </div>
-
-            <h3>
-                سفارش‌های من
-            </h3>
-
-            <p>
-                بخش حساب کاربری در حال آماده‌سازی است.
-            </p>
-
-            <a
-                href="order.html"
-                class="btn"
-            >
-                ثبت سفارش جدید
-            </a>
-
-        </div>
-        `;
-}
-
-
-/* =========================================================
-   SERVICE LIST PAGE
-   ========================================================= */
-
-function setupServicesPage() {
-
-    const container =
-        document.querySelector(
-            '#servicesList, .services-list, [data-services-list]'
-        );
-
-    if (!container) return;
-
-
-    /*
-       If the HTML already contains service cards,
-       don't destroy them.
-    */
-
-    if (container.children.length > 0) {
-        return;
-    }
-
-
-    Object.entries(SERVICES)
-        .forEach(
-            ([networkKey, network]) => {
-
-                network.items.forEach(
-                    service => {
-
-                        const card =
-                            document.createElement(
-                                'div'
-                            );
-
-                        card.className =
-                            'service-card';
-
-                        card.innerHTML =
-                            `
-                            <div class="service-icon">
-                                ${network.icon}
-                            </div>
-
-                            <h3>
-                                ${escapeHTML(
-                                    service.name
-                                )}
-                            </h3>
-
-                            <p>
-                                ${formatPrice(
-                                    service.price
-                                )}
-                                / ۱۰۰۰
-                            </p>
-
-                            <a
-                                href="order.html?service=${encodeURIComponent(service.id)}"
-                                class="btn"
-                            >
-                                ثبت سفارش
-                            </a>
-                            `;
-
-                        container.appendChild(card);
-                    }
-                );
-            }
-        );
-}
-
-
-/* =========================================================
-   LAST ORDER
-   ========================================================= */
-
-function setupLastOrder() {
-
-    let code = null;
-
-    try {
-
-        code =
-            localStorage.getItem(
-                'followcenter_last_order'
-            );
-
-    } catch {}
-
-
-    if (!code) return;
-
-
-    const elements =
-        document.querySelectorAll(
-            '[data-last-order]'
-        );
-
-
-    elements.forEach(element => {
-
-        element.textContent =
-            code;
 
         if (
-            element.tagName === 'A'
+          !Number.isInteger(
+            quantity
+          ) ||
+          quantity <= 0
         ) {
-
-            element.href =
-                `tracking.html?code=${encodeURIComponent(code)}`;
+          throw new Error(
+            "لطفاً تعداد صحیح وارد کنید."
+          );
         }
+
+        if (!link) {
+          throw new Error(
+            "لطفاً لینک موردنظر را وارد کنید."
+          );
+        }
+
+        if (!phone) {
+          throw new Error(
+            "لطفاً شماره موبایل را وارد کنید."
+          );
+        }
+
+        /* ================================================
+           LOAD SERVICE
+        ================================================ */
+
+        let apiService =
+          getApiService(
+            serviceCode
+          );
+
+        if (!apiService) {
+          await loadApiServices();
+
+          apiService =
+            getApiService(
+              serviceCode
+            );
+        }
+
+        if (!apiService) {
+          throw new Error(
+            "سرویس انتخاب‌شده در سرور پیدا نشد. صفحه را تازه‌سازی کنید و دوباره تلاش کنید."
+          );
+        }
+
+        const databaseServiceId =
+          Number(
+            apiService.id
+          );
+
+        if (
+          !Number.isInteger(
+            databaseServiceId
+          ) ||
+          databaseServiceId <= 0
+        ) {
+          throw new Error(
+            "شناسه سرویس از سرور معتبر نیست."
+          );
+        }
+
+        /* ================================================
+           SEND ORDER
+        ================================================ */
+
+        const result =
+          await apiFetch(
+            `${API_BASE}/api/orders`,
+            {
+              method: "POST",
+
+              body: JSON.stringify({
+                serviceId:
+                  databaseServiceId,
+
+                quantity:
+                  quantity,
+
+                link:
+                  link,
+
+                phone:
+                  phone,
+
+                notes:
+                  notes
+              })
+            }
+          );
+
+        if (
+          !result ||
+          result.success !== true
+        ) {
+          throw new Error(
+            result?.message ||
+            "ثبت سفارش انجام نشد."
+          );
+        }
+
+        /* ================================================
+           ORDER CODE
+        ================================================ */
+
+        const order =
+          result.order ||
+          {};
+
+        const orderCode =
+          result.orderCode ||
+          result.code ||
+          order.order_code ||
+          order.orderCode ||
+          order.code ||
+          "";
+
+        /* ================================================
+           SUCCESS
+        ================================================ */
+
+        if (messageElement) {
+          messageElement.className =
+            "order-message success";
+
+          messageElement.innerHTML = `
+            <div>
+              <strong>
+                ✅ سفارش با موفقیت ثبت شد
+              </strong>
+            </div>
+
+            ${
+              orderCode
+                ? `
+                  <div style="margin-top:10px">
+                    کد پیگیری:
+                    <strong>
+                      ${escapeHTML(
+                        orderCode
+                      )}
+                    </strong>
+                  </div>
+                `
+                : ""
+            }
+          `;
+        }
+
+        /* ================================================
+           SAVE LAST ORDER
+        ================================================ */
+
+        if (orderCode) {
+          try {
+            localStorage.setItem(
+              "followcenter_last_order",
+              orderCode
+            );
+          } catch {}
+        }
+
+        /* ================================================
+           RESET
+        ================================================ */
+
+        form.reset();
+
+        if (networkSelect) {
+          networkSelect.value =
+            "";
+        }
+
+        if (serviceSelect) {
+          serviceSelect.innerHTML =
+            '<option value="">ابتدا شبکه را انتخاب کنید</option>';
+        }
+
+        if (quantityInput) {
+          quantityInput.value =
+            "1000";
+        }
+
+        if (totalElement) {
+          totalElement.textContent =
+            "۰ تومان";
+        }
+
+        /* ================================================
+           TRACKING
+        ================================================ */
+
+        if (orderCode) {
+          setTimeout(
+            () => {
+              window.location.href =
+                `tracking.html?code=${encodeURIComponent(
+                  orderCode
+                )}`;
+            },
+            1500
+          );
+        }
+
+      } catch (error) {
+        console.error(
+          "Order error:",
+          error
+        );
+
+        if (messageElement) {
+          messageElement.className =
+            "order-message error";
+
+          messageElement.innerHTML = `
+            <strong>
+              ❌ ${escapeHTML(
+                error.message ||
+                "ثبت سفارش انجام نشد."
+              )}
+            </strong>
+          `;
+        }
+
+      } finally {
+        if (submitButton) {
+          submitButton.disabled =
+            false;
+
+          submitButton.textContent =
+            submitButton.dataset.oldText ||
+            "ثبت سفارش Demo";
+        }
+      }
+    }
+  );
+
+  /* =====================================================
+     NETWORK CHANGE
+  ===================================================== */
+
+  if (networkSelect) {
+    populateNetworkSelect(
+      networkSelect
+    );
+
+    networkSelect.addEventListener(
+      "change",
+      () => {
+        populateServiceSelect(
+          serviceSelect,
+          networkSelect.value
+        );
+
+        updateOrderPrice();
+      }
+    );
+  }
+
+  /* =====================================================
+     SERVICE CHANGE
+  ===================================================== */
+
+  if (serviceSelect) {
+    serviceSelect.addEventListener(
+      "change",
+      updateOrderPrice
+    );
+  }
+
+  /* =====================================================
+     QUANTITY CHANGE
+  ===================================================== */
+
+  if (quantityInput) {
+    quantityInput.addEventListener(
+      "input",
+      updateOrderPrice
+    );
+  }
+
+  /* =====================================================
+     QUERY SERVICE
+  ===================================================== */
+
+  const requestedService =
+    getQueryParam(
+      "service"
+    );
+
+  if (
+    requestedService &&
+    networkSelect &&
+    serviceSelect
+  ) {
+    const staticService =
+      getStaticService(
+        requestedService
+      );
+
+    if (staticService) {
+      networkSelect.value =
+        staticService.network;
+
+      populateServiceSelect(
+        serviceSelect,
+        staticService.network
+      );
+
+      serviceSelect.value =
+        staticService.id;
+
+      updateOrderPrice();
+    }
+  }
+
+  /* =====================================================
+     LOAD API SERVICES
+  ===================================================== */
+
+  loadApiServices()
+    .then(() => {
+      updateOrderPrice();
+    })
+    .catch(error => {
+      console.warn(
+        "Service loading error:",
+        error
+      );
     });
 }
 
+/* =========================================================
+   TRACKING
+========================================================= */
+
+function setupTracking() {
+  const form =
+    document.querySelector(
+      "#trackingForm"
+    );
+
+  const input =
+    document.querySelector(
+      "#code"
+    );
+
+  const resultElement =
+    document.querySelector(
+      "#trackingResult"
+    );
+
+  if (
+    !form ||
+    !input ||
+    !resultElement
+  ) {
+    return;
+  }
+
+  form.addEventListener(
+    "submit",
+    async event => {
+      event.preventDefault();
+
+      const code =
+        input.value
+          .trim()
+          .toUpperCase();
+
+      if (
+        !/^FC-\d{6}$/.test(
+          code
+        )
+      ) {
+        resultElement.innerHTML = `
+          <div class="tracking-error">
+            ❌ کد پیگیری باید مانند FC-123456 باشد.
+          </div>
+        `;
+
+        return;
+      }
+
+      resultElement.innerHTML = `
+        <p>
+          ⏳ در حال دریافت اطلاعات سفارش...
+        </p>
+      `;
+
+      try {
+        const data =
+          await apiFetch(
+            `${API_BASE}/api/orders/${encodeURIComponent(
+              code
+            )}`
+          );
+
+        if (
+          !data ||
+          data.success !== true ||
+          !data.order
+        ) {
+          throw new Error(
+            data?.message ||
+            "سفارش پیدا نشد."
+          );
+        }
+
+        renderTrackingResult(
+          data.order,
+          code,
+          resultElement
+        );
+
+      } catch (error) {
+        console.error(
+          "Tracking error:",
+          error
+        );
+
+        resultElement.innerHTML = `
+          <div class="tracking-error">
+            ❌ ${escapeHTML(
+              error.message ||
+              "خطا در دریافت سفارش."
+            )}
+          </div>
+        `;
+      }
+    }
+  );
+
+  const urlCode =
+    getQueryParam(
+      "code"
+    ) ||
+    getQueryParam(
+      "order"
+    );
+
+  if (urlCode) {
+    input.value =
+      urlCode
+        .trim()
+        .toUpperCase();
+
+    setTimeout(
+      () => {
+        form.dispatchEvent(
+          new Event(
+            "submit",
+            {
+              bubbles: true,
+              cancelable: true
+            }
+          )
+        );
+      },
+      300
+    );
+  }
+}
+
+function renderTrackingResult(
+  order,
+  fallbackCode,
+  resultElement
+) {
+  const code =
+    order.code ||
+    order.order_code ||
+    fallbackCode;
+
+  const network =
+    order.network_name ||
+    order.network ||
+    "-";
+
+  const service =
+    order.service_name ||
+    order.service ||
+    "-";
+
+  const quantity =
+    Number(
+      order.quantity
+    ) || 0;
+
+  const amount =
+    Number(
+      order.amount ??
+      order.total_price ??
+      0
+    );
+
+  const status =
+    order.status ||
+    "pending";
+
+  const createdAt =
+    order.created_at ||
+    order.createdAt ||
+    "";
+
+  resultElement.innerHTML = `
+    <div class="tracking-card">
+
+      <div class="tracking-header">
+        <h3>
+          📦 اطلاعات سفارش
+        </h3>
+
+        <div class="tracking-code">
+          ${escapeHTML(code)}
+        </div>
+      </div>
+
+      <div class="tracking-row">
+        <span>وضعیت</span>
+        <strong>
+          ${statusBadge(status)}
+        </strong>
+      </div>
+
+      <div class="tracking-row">
+        <span>شبکه</span>
+        <strong>
+          ${escapeHTML(network)}
+        </strong>
+      </div>
+
+      <div class="tracking-row">
+        <span>سرویس</span>
+        <strong>
+          ${escapeHTML(service)}
+        </strong>
+      </div>
+
+      <div class="tracking-row">
+        <span>تعداد</span>
+        <strong>
+          ${formatNumber(quantity)}
+        </strong>
+      </div>
+
+      <div class="tracking-row">
+        <span>مبلغ</span>
+        <strong>
+          ${formatPrice(amount)}
+        </strong>
+      </div>
+
+      ${
+        createdAt
+          ? `
+            <div class="tracking-row">
+              <span>تاریخ ثبت</span>
+              <strong>
+                ${escapeHTML(
+                  formatDate(
+                    createdAt
+                  )
+                )}
+              </strong>
+            </div>
+          `
+          : ""
+      }
+
+    </div>
+  `;
+}
 
 /* =========================================================
-   GLOBAL ERROR HANDLING
-   ========================================================= */
+   DATE
+========================================================= */
+
+function formatDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return String(value);
+  }
+
+  return date.toLocaleString(
+    "fa-IR",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function statusBadge(status) {
+  const normalized =
+    normalizeText(
+      status
+    );
+
+  let text =
+    "در انتظار";
+
+  let className =
+    "pending";
+
+  if (
+    normalized === "running" ||
+    normalized === "processing" ||
+    normalized === "in_progress"
+  ) {
+    text =
+      "در حال انجام";
+
+    className =
+      "running";
+
+  } else if (
+    normalized === "done" ||
+    normalized === "completed" ||
+    normalized === "complete"
+  ) {
+    text =
+      "تکمیل شده";
+
+    className =
+      "done";
+
+  } else if (
+    normalized === "cancelled" ||
+    normalized === "canceled"
+  ) {
+    text =
+      "لغو شده";
+
+    className =
+      "cancelled";
+
+  } else if (
+    normalized === "failed" ||
+    normalized === "error"
+  ) {
+    text =
+      "ناموفق";
+
+    className =
+      "cancelled";
+  }
+
+  return `
+    <span class="status-badge ${className}">
+      ${text}
+    </span>
+  `;
+}
+
+/* =========================================================
+   SERVICES PAGE
+========================================================= */
+
+function setupServicesPage() {
+  const container =
+    document.querySelector(
+      "#servicesList, .services-list, [data-services-list]"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  if (
+    container.children.length > 0
+  ) {
+    return;
+  }
+
+  Object.entries(
+    SERVICES
+  ).forEach(
+    ([networkKey, network]) => {
+      network.items.forEach(
+        service => {
+          const card =
+            document.createElement(
+              "div"
+            );
+
+          card.className =
+            "service-card";
+
+          card.innerHTML = `
+            <div class="service-icon">
+              ${network.icon}
+            </div>
+
+            <h3>
+              ${escapeHTML(
+                service.name
+              )}
+            </h3>
+
+            <p>
+              ${formatPrice(
+                service.price
+              )}
+              / ۱۰۰۰
+            </p>
+
+            <a
+              href="order.html?service=${encodeURIComponent(
+                service.id
+              )}"
+              class="btn"
+            >
+              ثبت سفارش
+            </a>
+          `;
+
+          container.appendChild(
+            card
+          );
+        }
+      );
+    }
+  );
+}
+
+/* =========================================================
+   ORDERS PAGE
+========================================================= */
+
+function setupOrdersPage() {
+  const container =
+    document.querySelector(
+      "#ordersList, .orders-list, [data-orders]"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="orders-empty">
+
+      <div style="font-size:42px">
+        📦
+      </div>
+
+      <h3>
+        سفارش‌های من
+      </h3>
+
+      <p>
+        بخش حساب کاربری در حال آماده‌سازی است.
+      </p>
+
+      <a
+        href="order.html"
+        class="btn"
+      >
+        ثبت سفارش جدید
+      </a>
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   LAST ORDER
+========================================================= */
+
+function setupLastOrder() {
+  let code = null;
+
+  try {
+    code =
+      localStorage.getItem(
+        "followcenter_last_order"
+      );
+  } catch {}
+
+  if (!code) {
+    return;
+  }
+
+  const elements =
+    document.querySelectorAll(
+      "[data-last-order]"
+    );
+
+  elements.forEach(
+    element => {
+      element.textContent =
+        code;
+
+      if (
+        element.tagName === "A"
+      ) {
+        element.href =
+          `tracking.html?code=${encodeURIComponent(
+            code
+          )}`;
+      }
+    }
+  );
+}
+
+/* =========================================================
+   GLOBAL ERRORS
+========================================================= */
 
 window.addEventListener(
-    'error',
-    event => {
-
-        console.error(
-            'FollowCenter error:',
-            event.error || event.message
-        );
-    }
+  "error",
+  event => {
+    console.error(
+      "FollowCenter error:",
+      event.error ||
+      event.message
+    );
+  }
 );
-
 
 window.addEventListener(
-    'unhandledrejection',
-    event => {
-
-        console.error(
-            'FollowCenter promise error:',
-            event.reason
-        );
-    }
+  "unhandledrejection",
+  event => {
+    console.error(
+      "FollowCenter promise error:",
+      event.reason
+    );
+  }
 );
-
 
 /* =========================================================
    INITIALIZATION
-   ========================================================= */
+========================================================= */
 
-async function initFollowCenter() {
+function initFollowCenter() {
+  try {
+    setupNavigation();
 
-    try {
+    setupOrder();
 
-        setupNavigation();
+    setupTracking();
 
-        setupServiceCards();
+    setupServicesPage();
 
-        setupServicesPage();
+    setupOrdersPage();
 
-        setupOrdersPage();
+    setupLastOrder();
 
-        setupLastOrder();
-
-        await setupOrder();
-
-        await setupTracking();
-
-    } catch (error) {
-
-        console.error(
-            'FollowCenter initialization error:',
-            error
-        );
-    }
+  } catch (error) {
+    console.error(
+      "FollowCenter initialization error:",
+      error
+    );
+  }
 }
-
 
 /* =========================================================
    START
-   ========================================================= */
+========================================================= */
 
 if (
-    document.readyState === 'loading'
+  document.readyState ===
+  "loading"
 ) {
-
-    document.addEventListener(
-        'DOMContentLoaded',
-        initFollowCenter
-    );
-
+  document.addEventListener(
+    "DOMContentLoaded",
+    initFollowCenter
+  );
 } else {
-
-    initFollowCenter();
-                      }
+  initFollowCenter();
+}
