@@ -121,10 +121,7 @@ function normalizeText(value) {
 }
 
 function getQueryParam(name) {
-  const params = new URLSearchParams(
-    window.location.search
-  );
-
+  const params = new URLSearchParams(window.location.search);
   return params.get(name);
 }
 
@@ -221,26 +218,102 @@ async function loadApiServices() {
   }
 }
 
+/* =========================================================
+   FIXED SERVICE MATCHING
+========================================================= */
+
 function getApiService(serviceCode) {
   if (!serviceCode) {
     return null;
   }
 
-  const code =
-    normalizeText(serviceCode);
+  const code = normalizeText(serviceCode);
+  const numericId = Number(serviceCode);
 
   return (
     API_SERVICES.find(service => {
+      const serviceCodeValue =
+        normalizeText(service.service_code);
+
+      const codeValue =
+        normalizeText(service.code);
+
+      const slugValue =
+        normalizeText(service.slug);
+
+      const serviceId =
+        Number(service.id);
+
       return (
+        serviceCodeValue === code ||
+        codeValue === code ||
+        slugValue === code ||
+        (
+          Number.isInteger(numericId) &&
+          numericId > 0 &&
+          serviceId === numericId
+        )
+      );
+    }) || null
+  );
+}
+
+/* =========================================================
+   FORCE REFRESH SERVICE FROM API
+========================================================= */
+
+async function resolveApiService(serviceCode) {
+  let service = getApiService(serviceCode);
+
+  if (service) {
+    return service;
+  }
+
+  const freshServices =
+    await loadApiServices();
+
+  service =
+    getApiService(serviceCode);
+
+  if (service) {
+    return service;
+  }
+
+  const code =
+    normalizeText(serviceCode);
+
+  const numericId =
+    Number(serviceCode);
+
+  return (
+    freshServices.find(item => {
+      const itemCode =
         normalizeText(
-          service.service_code
-        ) === code ||
+          item.service_code
+        );
+
+      const itemLegacyCode =
         normalizeText(
-          service.code
-        ) === code ||
+          item.code
+        );
+
+      const itemSlug =
         normalizeText(
-          service.slug
-        ) === code
+          item.slug
+        );
+
+      const itemId =
+        Number(item.id);
+
+      return (
+        itemCode === code ||
+        itemLegacyCode === code ||
+        itemSlug === code ||
+        (
+          Number.isInteger(numericId) &&
+          numericId > 0 &&
+          itemId === numericId
+        )
       );
     }) || null
   );
@@ -307,9 +380,7 @@ function setupNavigation() {
    NETWORK SELECT
 ========================================================= */
 
-function populateNetworkSelect(
-  select
-) {
+function populateNetworkSelect(select) {
   if (!select) {
     return;
   }
@@ -521,7 +592,6 @@ function setupOrder() {
 
   /* =====================================================
      SUBMIT LISTENER
-     مهم: قبل از loadApiServices
   ===================================================== */
 
   form.addEventListener(
@@ -610,26 +680,17 @@ function setupOrder() {
         }
 
         /* ================================================
-           LOAD SERVICE
+           GET SERVICE FROM SERVER
         ================================================ */
 
-        let apiService =
-          getApiService(
+        const apiService =
+          await resolveApiService(
             serviceCode
           );
 
         if (!apiService) {
-          await loadApiServices();
-
-          apiService =
-            getApiService(
-              serviceCode
-            );
-        }
-
-        if (!apiService) {
           throw new Error(
-            "سرویس انتخاب‌شده در سرور پیدا نشد. صفحه را تازه‌سازی کنید و دوباره تلاش کنید."
+            "سرویس انتخاب‌شده در سرور پیدا نشد. اتصال سایت به API را بررسی کنید و دوباره تلاش کنید."
           );
         }
 
@@ -1050,6 +1111,10 @@ function setupTracking() {
     );
   }
 }
+
+/* =========================================================
+   TRACKING RESULT
+========================================================= */
 
 function renderTrackingResult(
   order,
@@ -1475,4 +1540,4 @@ if (
   );
 } else {
   initFollowCenter();
-}
+      }
