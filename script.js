@@ -1,6 +1,7 @@
 /* =========================================================
    FollowCenter.ir
    Complete replacement for script.js
+   نسخه جدید بدون سیستم «پیگیری سفارش»
 ========================================================= */
 
 const API_BASE = "https://followcenter-api.onrender.com";
@@ -173,6 +174,15 @@ async function apiFetch(url, options = {}) {
     if (error.name === "AbortError") {
       throw new Error(
         "زمان پاسخ سرور تمام شد. دوباره تلاش کنید."
+      );
+    }
+
+    if (
+      error instanceof TypeError &&
+      error.message === "Failed to fetch"
+    ) {
+      throw new Error(
+        "ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت و آدرس سایت را بررسی کنید."
       );
     }
 
@@ -520,7 +530,7 @@ function setupOrder() {
     );
 
   /* =====================================================
-     SUBMIT LISTENER
+     SUBMIT
   ===================================================== */
 
   form.addEventListener(
@@ -558,8 +568,7 @@ function setupOrder() {
 
       try {
         const serviceCode =
-          serviceSelect.value
-            .trim();
+          serviceSelect.value;
 
         const quantity =
           Number(
@@ -610,8 +619,10 @@ function setupOrder() {
         }
 
         /* ================================================
-           CHECK STATIC SERVICE
-           ثبت سفارش دیگر وابسته به API SERVICES نیست.
+           STATIC SERVICE VALIDATION
+
+           برای ثبت سفارش دیگر منتظر /api/services
+           نمی‌مانیم.
         ================================================ */
 
         const staticService =
@@ -627,7 +638,9 @@ function setupOrder() {
 
         /* ================================================
            SEND ORDER
-           بک‌اند جدید مستقیماً serviceCode را قبول می‌کند.
+
+           سرور جدید می‌تواند serviceCode را
+           مستقیماً دریافت و سرویس را پیدا کند.
         ================================================ */
 
         const result =
@@ -700,15 +713,23 @@ function setupOrder() {
               orderCode
                 ? `
                   <div style="margin-top:10px">
-                    کد پیگیری:
-                    <strong>
+                    کد سفارش شما:
+                    <strong style="font-size:18px">
                       ${escapeHTML(
                         orderCode
                       )}
                     </strong>
                   </div>
+
+                  <div style="margin-top:8px">
+                    این کد را برای پشتیبانی نزد خود نگه دارید.
+                  </div>
                 `
-                : ""
+                : `
+                  <div style="margin-top:10px">
+                    سفارش شما ثبت شد.
+                  </div>
+                `
             }
           `;
         }
@@ -727,7 +748,7 @@ function setupOrder() {
         }
 
         /* ================================================
-           RESET
+           RESET FORM
         ================================================ */
 
         form.reset();
@@ -752,21 +773,11 @@ function setupOrder() {
             "۰ تومان";
         }
 
-        /* ================================================
-           TRACKING
-        ================================================ */
-
-        if (orderCode) {
-          setTimeout(
-            () => {
-              window.location.href =
-                `tracking.html?code=${encodeURIComponent(
-                  orderCode
-                )}`;
-            },
-            1500
-          );
-        }
+        /*
+          مهم:
+          دیگر به tracking.html منتقل نمی‌شویم.
+          کد سفارش همین‌جا به مشتری نمایش داده می‌شود.
+        */
 
       } catch (error) {
         console.error(
@@ -881,9 +892,7 @@ function setupOrder() {
   }
 
   /* =====================================================
-     LOAD API SERVICES
-     فقط برای قیمت/نمایش اطلاعات؛
-     ثبت سفارش به آن وابسته نیست.
+     OPTIONAL API PRICE SYNC
   ===================================================== */
 
   loadApiServices()
@@ -896,346 +905,6 @@ function setupOrder() {
         error
       );
     });
-}
-
-/* =========================================================
-   TRACKING
-========================================================= */
-
-function setupTracking() {
-  const form =
-    document.querySelector(
-      "#trackingForm"
-    );
-
-  const input =
-    document.querySelector(
-      "#code"
-    );
-
-  const resultElement =
-    document.querySelector(
-      "#trackingResult"
-    );
-
-  if (
-    !form ||
-    !input ||
-    !resultElement
-  ) {
-    return;
-  }
-
-  form.addEventListener(
-    "submit",
-    async event => {
-      event.preventDefault();
-
-      const code =
-        input.value
-          .trim()
-          .toUpperCase();
-
-      if (
-        !/^FC-\d{6}$/.test(
-          code
-        )
-      ) {
-        resultElement.innerHTML = `
-          <div class="tracking-error">
-            ❌ کد پیگیری باید مانند FC-123456 باشد.
-          </div>
-        `;
-
-        return;
-      }
-
-      resultElement.innerHTML = `
-        <p>
-          ⏳ در حال دریافت اطلاعات سفارش...
-        </p>
-      `;
-
-      try {
-        const data =
-          await apiFetch(
-            `${API_BASE}/api/orders/${encodeURIComponent(
-              code
-            )}`
-          );
-
-        if (
-          !data ||
-          data.success !== true ||
-          !data.order
-        ) {
-          throw new Error(
-            data?.message ||
-            "سفارش پیدا نشد."
-          );
-        }
-
-        renderTrackingResult(
-          data.order,
-          code,
-          resultElement
-        );
-
-      } catch (error) {
-        console.error(
-          "Tracking error:",
-          error
-        );
-
-        resultElement.innerHTML = `
-          <div class="tracking-error">
-            ❌ ${escapeHTML(
-              error.message ||
-              "خطا در دریافت سفارش."
-            )}
-          </div>
-        `;
-      }
-    }
-  );
-
-  const urlCode =
-    getQueryParam(
-      "code"
-    ) ||
-    getQueryParam(
-      "order"
-    );
-
-  if (urlCode) {
-    input.value =
-      urlCode
-        .trim()
-        .toUpperCase();
-
-    setTimeout(
-      () => {
-        form.dispatchEvent(
-          new Event(
-            "submit",
-            {
-              bubbles: true,
-              cancelable: true
-            }
-          )
-        );
-      },
-      300
-    );
-  }
-}
-
-function renderTrackingResult(
-  order,
-  fallbackCode,
-  resultElement
-) {
-  const code =
-    order.code ||
-    order.order_code ||
-    fallbackCode;
-
-  const network =
-    order.network_name ||
-    order.network ||
-    "-";
-
-  const service =
-    order.service_name ||
-    order.service ||
-    "-";
-
-  const quantity =
-    Number(
-      order.quantity
-    ) || 0;
-
-  const amount =
-    Number(
-      order.amount ??
-      order.total_price ??
-      0
-    );
-
-  const status =
-    order.status ||
-    "pending";
-
-  const createdAt =
-    order.created_at ||
-    order.createdAt ||
-    "";
-
-  resultElement.innerHTML = `
-    <div class="tracking-card">
-
-      <div class="tracking-header">
-        <h3>
-          📦 اطلاعات سفارش
-        </h3>
-
-        <div class="tracking-code">
-          ${escapeHTML(code)}
-        </div>
-      </div>
-
-      <div class="tracking-row">
-        <span>وضعیت</span>
-        <strong>
-          ${statusBadge(status)}
-        </strong>
-      </div>
-
-      <div class="tracking-row">
-        <span>شبکه</span>
-        <strong>
-          ${escapeHTML(network)}
-        </strong>
-      </div>
-
-      <div class="tracking-row">
-        <span>سرویس</span>
-        <strong>
-          ${escapeHTML(service)}
-        </strong>
-      </div>
-
-      <div class="tracking-row">
-        <span>تعداد</span>
-        <strong>
-          ${formatNumber(quantity)}
-        </strong>
-      </div>
-
-      <div class="tracking-row">
-        <span>مبلغ</span>
-        <strong>
-          ${formatPrice(amount)}
-        </strong>
-      </div>
-
-      ${
-        createdAt
-          ? `
-            <div class="tracking-row">
-              <span>تاریخ ثبت</span>
-              <strong>
-                ${escapeHTML(
-                  formatDate(
-                    createdAt
-                  )
-                )}
-              </strong>
-            </div>
-          `
-          : ""
-      }
-
-    </div>
-  `;
-}
-
-/* =========================================================
-   DATE
-========================================================= */
-
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return String(value);
-  }
-
-  return date.toLocaleString(
-    "fa-IR",
-    {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    }
-  );
-}
-
-/* =========================================================
-   STATUS
-========================================================= */
-
-function statusBadge(status) {
-  const normalized =
-    normalizeText(
-      status
-    );
-
-  let text =
-    "در انتظار";
-
-  let className =
-    "pending";
-
-  if (
-    normalized === "running" ||
-    normalized === "processing" ||
-    normalized === "in_progress"
-  ) {
-    text =
-      "در حال انجام";
-
-    className =
-      "running";
-
-  } else if (
-    normalized === "done" ||
-    normalized === "completed" ||
-    normalized === "complete"
-  ) {
-    text =
-      "تکمیل شده";
-
-    className =
-      "done";
-
-  } else if (
-    normalized === "cancelled" ||
-    normalized === "canceled"
-  ) {
-    text =
-      "لغو شده";
-
-    className =
-      "cancelled";
-
-  } else if (
-    normalized === "failed" ||
-    normalized === "error"
-  ) {
-    text =
-      "ناموفق";
-
-    className =
-      "cancelled";
-  }
-
-  return `
-    <span class="status-badge ${className}">
-      ${text}
-    </span>
-  `;
 }
 
 /* =========================================================
@@ -1377,13 +1046,17 @@ function setupLastOrder() {
       element.textContent =
         code;
 
+      /*
+        دیگر لینک به tracking.html
+        ساخته نمی‌شود.
+      */
+
       if (
         element.tagName === "A"
       ) {
-        element.href =
-          `tracking.html?code=${encodeURIComponent(
-            code
-          )}`;
+        element.removeAttribute(
+          "href"
+        );
       }
     }
   );
@@ -1424,8 +1097,6 @@ function initFollowCenter() {
 
     setupOrder();
 
-    setupTracking();
-
     setupServicesPage();
 
     setupOrdersPage();
@@ -1454,4 +1125,4 @@ if (
   );
 } else {
   initFollowCenter();
-     }
+}
