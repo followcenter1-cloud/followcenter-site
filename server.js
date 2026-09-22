@@ -89,7 +89,6 @@ const SERVICES = [
     5000000,
     "افزایش فالوور اینستاگرام"
   ],
-
   [
     "ig_like",
     "instagram",
@@ -99,7 +98,6 @@ const SERVICES = [
     1000000,
     "افزایش لایک اینستاگرام"
   ],
-
   [
     "ig_view",
     "instagram",
@@ -109,7 +107,6 @@ const SERVICES = [
     10000000,
     "افزایش ویو اینستاگرام"
   ],
-
   [
     "ig_story_view",
     "instagram",
@@ -119,7 +116,6 @@ const SERVICES = [
     1000000,
     "افزایش ویو استوری"
   ],
-
   [
     "ig_comment",
     "instagram",
@@ -129,7 +125,6 @@ const SERVICES = [
     100000,
     "افزایش کامنت اینستاگرام"
   ],
-
   [
     "ig_save",
     "instagram",
@@ -139,7 +134,6 @@ const SERVICES = [
     500000,
     "افزایش ذخیره پست"
   ],
-
   [
     "ig_share",
     "instagram",
@@ -149,7 +143,6 @@ const SERVICES = [
     500000,
     "افزایش اشتراک‌گذاری پست"
   ],
-
   [
     "ig_story_like",
     "instagram",
@@ -159,7 +152,6 @@ const SERVICES = [
     500000,
     "افزایش لایک استوری"
   ],
-
   [
     "ig_live",
     "instagram",
@@ -169,7 +161,6 @@ const SERVICES = [
     100000,
     "افزایش بازدید لایو"
   ],
-
   [
     "ig_explore",
     "instagram",
@@ -179,7 +170,6 @@ const SERVICES = [
     100,
     "خدمات اکسپلور"
   ],
-
   [
     "ig_impression",
     "instagram",
@@ -189,7 +179,6 @@ const SERVICES = [
     10000000,
     "افزایش ایمپرشن"
   ],
-
   [
     "ig_poll",
     "instagram",
@@ -199,7 +188,6 @@ const SERVICES = [
     100000,
     "تعامل نظرسنجی"
   ],
-
   [
     "ig_video_view",
     "instagram",
@@ -209,7 +197,6 @@ const SERVICES = [
     10000000,
     "افزایش ویو ویدیو"
   ],
-
   [
     "ig_repost",
     "instagram",
@@ -219,7 +206,6 @@ const SERVICES = [
     500000,
     "افزایش ری‌پست"
   ],
-
   [
     "ig_comment_like",
     "instagram",
@@ -229,7 +215,6 @@ const SERVICES = [
     100000,
     "افزایش لایک کامنت"
   ],
-
   [
     "ig_channel_member",
     "instagram",
@@ -251,7 +236,6 @@ const SERVICES = [
     1000000,
     "افزایش اعضای کانال"
   ],
-
   [
     "tg_group",
     "telegram",
@@ -261,7 +245,6 @@ const SERVICES = [
     1000000,
     "افزایش اعضای گروه"
   ],
-
   [
     "tg_view",
     "telegram",
@@ -271,7 +254,6 @@ const SERVICES = [
     10000000,
     "افزایش بازدید پست"
   ],
-
   [
     "tg_story",
     "telegram",
@@ -281,7 +263,6 @@ const SERVICES = [
     1000000,
     "افزایش بازدید استوری"
   ],
-
   [
     "tg_reaction",
     "telegram",
@@ -291,7 +272,6 @@ const SERVICES = [
     1000000,
     "افزایش ری‌اکشن"
   ],
-
   [
     "tg_like",
     "telegram",
@@ -301,7 +281,6 @@ const SERVICES = [
     1000000,
     "افزایش لایک"
   ],
-
   [
     "tg_share",
     "telegram",
@@ -311,7 +290,6 @@ const SERVICES = [
     500000,
     "افزایش اشتراک‌گذاری"
   ],
-
   [
     "tg_ads",
     "telegram",
@@ -321,7 +299,6 @@ const SERVICES = [
     1000,
     "خدمات تبلیغات تلگرام"
   ],
-
   [
     "tg_poll",
     "telegram",
@@ -331,7 +308,6 @@ const SERVICES = [
     100000,
     "افزایش رأی نظرسنجی"
   ],
-
   [
     "tg_premium",
     "telegram",
@@ -341,7 +317,6 @@ const SERVICES = [
     100000,
     "خدمات پریمیوم"
   ],
-
   [
     "tg_story_like",
     "telegram",
@@ -351,7 +326,6 @@ const SERVICES = [
     500000,
     "افزایش لایک استوری"
   ],
-
   [
     "tg_boost",
     "telegram",
@@ -361,7 +335,6 @@ const SERVICES = [
     10000,
     "خدمات بوست کانال"
   ],
-
   [
     "tg_star",
     "telegram",
@@ -371,7 +344,6 @@ const SERVICES = [
     100000,
     "خدمات استار تلگرام"
   ],
-
   [
     "tg_gift",
     "telegram",
@@ -381,7 +353,6 @@ const SERVICES = [
     10000,
     "خدمات گیفت تلگرام"
   ],
-
   [
     "tg_reaction_positive",
     "telegram",
@@ -391,7 +362,6 @@ const SERVICES = [
     1000000,
     "ری‌اکشن مثبت"
   ],
-
   [
     "tg_reaction_negative",
     "telegram",
@@ -413,7 +383,6 @@ const SERVICES = [
     1000000,
     "افزایش دنبال‌کننده روبیکا"
   ],
-
   [
     "rb_like",
     "rubika",
@@ -423,7 +392,6 @@ const SERVICES = [
     1000000,
     "افزایش لایک روبیکا"
   ],
-
   [
     "rb_view",
     "rubika",
@@ -433,7 +401,6 @@ const SERVICES = [
     10000000,
     "افزایش بازدید روبیکا"
   ],
-
   [
     "rb_comment",
     "rubika",
@@ -443,7 +410,6 @@ const SERVICES = [
     100000,
     "افزایش کامنت روبیکا"
   ],
-
   [
     "rb_share",
     "rubika",
@@ -465,7 +431,6 @@ const SERVICES = [
     1000000,
     "افزایش اعضای کانال ایتا"
   ],
-
   [
     "ea_group",
     "eitaa",
@@ -475,7 +440,6 @@ const SERVICES = [
     1000000,
     "افزایش اعضای گروه ایتا"
   ],
-
   [
     "ea_view",
     "eitaa",
@@ -485,7 +449,6 @@ const SERVICES = [
     10000000,
     "افزایش بازدید ایتا"
   ],
-
   [
     "ea_ads",
     "eitaa",
@@ -495,7 +458,6 @@ const SERVICES = [
     1000,
     "خدمات تبلیغات ایتا"
   ],
-
   [
     "ea_directory",
     "eitaa",
@@ -505,7 +467,6 @@ const SERVICES = [
     1000,
     "خدمات دایرکتوری ایتا"
   ],
-
   [
     "ea_like",
     "eitaa",
@@ -515,7 +476,6 @@ const SERVICES = [
     1000000,
     "افزایش لایک ایتا"
   ],
-
   [
     "ea_comment",
     "eitaa",
@@ -544,6 +504,11 @@ function cleanString(value, maxLength = 2000) {
 function cleanPhone(value) {
   return cleanString(value, 30)
     .replace(/[^\d+]/g, "");
+}
+
+function cleanServiceCode(value) {
+  return cleanString(value, 100)
+    .toLowerCase();
 }
 
 function isValidUrl(value) {
@@ -603,10 +568,6 @@ async function initializeDatabase() {
   try {
     await client.query("BEGIN");
 
-    /* =====================================================
-       USERS
-    ===================================================== */
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -616,10 +577,6 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    /* =====================================================
-       SERVICES
-    ===================================================== */
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS services (
@@ -637,10 +594,6 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    /* =====================================================
-       ORDERS
-    ===================================================== */
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS orders (
@@ -660,10 +613,6 @@ async function initializeDatabase() {
       )
     `);
 
-    /* =====================================================
-       PAYMENTS
-    ===================================================== */
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS payments (
         id SERIAL PRIMARY KEY,
@@ -675,10 +624,6 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    /* =====================================================
-       AUDIT LOGS
-    ===================================================== */
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
@@ -692,134 +637,48 @@ async function initializeDatabase() {
       )
     `);
 
-    /* =====================================================
-       ADD MISSING SERVICE COLUMNS
-    ===================================================== */
+    const serviceColumns = [
+      ["service_code", "VARCHAR(100)"],
+      ["network", "VARCHAR(50)"],
+      ["name", "TEXT"],
+      ["price", "NUMERIC(14,2)"],
+      ["price_per_1000", "NUMERIC(14,2)"],
+      ["min_quantity", "INTEGER"],
+      ["max_quantity", "INTEGER"],
+      ["description", "TEXT"],
+      ["is_active", "BOOLEAN"],
+      ["created_at", "TIMESTAMP"],
+      ["updated_at", "TIMESTAMP"]
+    ];
 
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS service_code VARCHAR(100)
-    `);
+    for (const [column, type] of serviceColumns) {
+      await client.query(`
+        ALTER TABLE services
+        ADD COLUMN IF NOT EXISTS ${column} ${type}
+      `);
+    }
 
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS network VARCHAR(50)
-    `);
+    const orderColumns = [
+      ["order_code", "VARCHAR(50)"],
+      ["user_id", "INTEGER"],
+      ["service_id", "INTEGER"],
+      ["quantity", "INTEGER"],
+      ["link", "TEXT"],
+      ["target_url", "TEXT"],
+      ["phone", "VARCHAR(30)"],
+      ["notes", "TEXT"],
+      ["amount", "NUMERIC(14,2)"],
+      ["total_price", "NUMERIC(14,2)"],
+      ["status", "VARCHAR(50)"],
+      ["created_at", "TIMESTAMP"]
+    ];
 
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS name TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS price NUMERIC(14,2)
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS price_per_1000 NUMERIC(14,2)
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS min_quantity INTEGER
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS max_quantity INTEGER
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS description TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS is_active BOOLEAN
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP
-    `);
-
-    await client.query(`
-      ALTER TABLE services
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP
-    `);
-
-    /* =====================================================
-       ADD MISSING ORDER COLUMNS
-    ===================================================== */
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS order_code VARCHAR(50)
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS user_id INTEGER
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS service_id INTEGER
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS quantity INTEGER
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS link TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS target_url TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS phone VARCHAR(30)
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS notes TEXT
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS amount NUMERIC(14,2)
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS total_price NUMERIC(14,2)
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS status VARCHAR(50)
-    `);
-
-    await client.query(`
-      ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP
-    `);
-
-    /* =====================================================
-       IMPORTANT:
-       CONVERT OLD BIGINT PRICE COLUMNS TO NUMERIC
-       This fixes the 42P08 / numeric versus bigint problem.
-    ===================================================== */
+    for (const [column, type] of orderColumns) {
+      await client.query(`
+        ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS ${column} ${type}
+      `);
+    }
 
     await client.query(`
       ALTER TABLE services
@@ -845,10 +704,6 @@ async function initializeDatabase() {
       USING COALESCE(total_price, 0)::NUMERIC(14,2)
     `);
 
-    /* =====================================================
-       DEFAULT VALUES
-    ===================================================== */
-
     await client.query(`
       UPDATE services
       SET
@@ -872,10 +727,6 @@ async function initializeDatabase() {
         created_at = COALESCE(created_at, CURRENT_TIMESTAMP)
     `);
 
-    /* =====================================================
-       SERVICE SEED
-    ===================================================== */
-
     for (const service of SERVICES) {
       const [
         code,
@@ -891,11 +742,11 @@ async function initializeDatabase() {
         `
         SELECT id
         FROM services
-        WHERE service_code = $1
+        WHERE LOWER(TRIM(service_code)) = $1
         ORDER BY id ASC
         LIMIT 1
         `,
-        [code]
+        [code.toLowerCase()]
       );
 
       if (existing.rowCount > 0) {
@@ -903,18 +754,20 @@ async function initializeDatabase() {
           `
           UPDATE services
           SET
-            network = $1,
-            name = $2,
-            price = $3::NUMERIC(14,2),
-            price_per_1000 = $3::NUMERIC(14,2),
-            min_quantity = $4::INTEGER,
-            max_quantity = $5::INTEGER,
-            description = $6,
+            service_code = $1,
+            network = $2,
+            name = $3,
+            price = $4::NUMERIC(14,2),
+            price_per_1000 = $4::NUMERIC(14,2),
+            min_quantity = $5::INTEGER,
+            max_quantity = $6::INTEGER,
+            description = $7,
             is_active = TRUE,
             updated_at = CURRENT_TIMESTAMP
-          WHERE id = $7::INTEGER
+          WHERE id = $8::INTEGER
           `,
           [
+            code,
             network,
             name,
             String(price),
@@ -967,10 +820,6 @@ async function initializeDatabase() {
       }
     }
 
-    /* =====================================================
-       INDEXES
-    ===================================================== */
-
     await client.query(`
       CREATE INDEX IF NOT EXISTS
       idx_services_service_code
@@ -1006,7 +855,6 @@ async function initializeDatabase() {
     console.log(
       `Database initialized successfully. ${SERVICES.length} services are ready.`
     );
-
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -1018,7 +866,6 @@ async function initializeDatabase() {
     );
 
     throw error;
-
   } finally {
     client.release();
   }
@@ -1043,7 +890,8 @@ app.get("/", (req, res) => {
 app.get("/api", (req, res) => {
   res.json({
     success: true,
-    message: "FollowCenter API and database are working.",
+    message:
+      "FollowCenter API and database are working.",
     status: "online"
   });
 });
@@ -1061,7 +909,6 @@ app.get("/api/health", async (req, res) => {
       status: "healthy",
       database: "connected"
     });
-
   } catch (error) {
     console.error(
       "Health check error:",
@@ -1077,7 +924,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 /* =========================================================
-   SERVICES API
+   SERVICES
 ========================================================= */
 
 app.get("/api/services", async (req, res) => {
@@ -1112,7 +959,6 @@ app.get("/api/services", async (req, res) => {
       count: result.rows.length,
       services: result.rows
     });
-
   } catch (error) {
     console.error(
       "Services API error:",
@@ -1128,12 +974,26 @@ app.get("/api/services", async (req, res) => {
 
 /* =========================================================
    CREATE ORDER
+   IMPORTANT:
+   This endpoint accepts BOTH:
+   - serviceCode
+   - serviceId
+
+   Frontend will use serviceCode.
 ========================================================= */
 
 app.post("/api/orders", async (req, res) => {
   try {
+    const serviceCode =
+      cleanServiceCode(
+        req.body.serviceCode
+      );
+
+    const rawServiceId =
+      req.body.serviceId;
+
     const serviceId =
-      Number(req.body.serviceId);
+      Number(rawServiceId);
 
     const quantity =
       Number(req.body.quantity);
@@ -1152,13 +1012,25 @@ app.post("/api/orders", async (req, res) => {
     ===================================================== */
 
     if (
-      !Number.isInteger(serviceId) ||
-      serviceId <= 0
+      !serviceCode &&
+      (!Number.isInteger(serviceId) ||
+        serviceId <= 0)
     ) {
       return res.status(400).json({
         success: false,
         message:
           "سرویس انتخاب‌شده معتبر نیست."
+      });
+    }
+
+    if (
+      serviceCode &&
+      !/^[a-z0-9_]+$/i.test(serviceCode)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "کد سرویس معتبر نیست."
       });
     }
 
@@ -1197,28 +1069,57 @@ app.post("/api/orders", async (req, res) => {
 
     /* =====================================================
        FIND SERVICE
+
+       serviceCode has priority.
+       This is the important fix.
     ===================================================== */
 
-    const serviceResult =
-      await pool.query(
-        `
-        SELECT
-          id,
-          service_code,
-          network,
-          name,
-          price,
-          price_per_1000,
-          min_quantity,
-          max_quantity,
-          description
-        FROM services
-        WHERE id = $1::INTEGER
-        AND is_active = TRUE
-        LIMIT 1
-        `,
-        [serviceId]
-      );
+    let serviceResult;
+
+    if (serviceCode) {
+      serviceResult =
+        await pool.query(
+          `
+          SELECT
+            id,
+            service_code,
+            network,
+            name,
+            price,
+            price_per_1000,
+            min_quantity,
+            max_quantity,
+            description
+          FROM services
+          WHERE LOWER(TRIM(service_code)) = $1
+          AND is_active = TRUE
+          ORDER BY id ASC
+          LIMIT 1
+          `,
+          [serviceCode]
+        );
+    } else {
+      serviceResult =
+        await pool.query(
+          `
+          SELECT
+            id,
+            service_code,
+            network,
+            name,
+            price,
+            price_per_1000,
+            min_quantity,
+            max_quantity,
+            description
+          FROM services
+          WHERE id = $1::INTEGER
+          AND is_active = TRUE
+          LIMIT 1
+          `,
+          [serviceId]
+        );
+    }
 
     if (
       serviceResult.rowCount === 0
@@ -1285,7 +1186,7 @@ app.post("/api/orders", async (req, res) => {
     const totalPrice =
       Math.ceil(
         (pricePer1000 * quantity) /
-        1000
+          1000
       );
 
     if (
@@ -1383,61 +1284,43 @@ app.post("/api/orders", async (req, res) => {
 
       return res.status(201).json({
         success: true,
-
         message:
           "سفارش با موفقیت ثبت شد.",
-
         orderCode:
           order.order_code,
-
         code:
           order.order_code,
-
         order: {
           id:
             order.id,
-
           code:
             order.order_code,
-
           order_code:
             order.order_code,
-
           service:
             service.name,
-
           service_name:
             service.name,
-
           serviceCode:
             service.service_code,
-
           service_code:
             service.service_code,
-
           network:
             service.network,
-
           quantity:
             Number(order.quantity),
-
           amount:
             Number(order.amount),
-
           total_price:
             Number(order.total_price),
-
           status:
             order.status,
-
           createdAt:
             order.created_at,
-
           created_at:
             order.created_at
         }
       });
-
     } catch (error) {
       try {
         await client.query(
@@ -1446,11 +1329,9 @@ app.post("/api/orders", async (req, res) => {
       } catch {}
 
       throw error;
-
     } finally {
       client.release();
     }
-
   } catch (error) {
     console.error(
       "Create order error:",
@@ -1478,10 +1359,6 @@ app.get(
           req.params.code
         );
 
-      /* ===================================================
-         VALIDATE CODE
-      =================================================== */
-
       if (
         !/^FC-\d{6}$/.test(code)
       ) {
@@ -1491,10 +1368,6 @@ app.get(
             "کد سفارش معتبر نیست."
         });
       }
-
-      /* ===================================================
-         FIND ORDER
-      =================================================== */
 
       const result =
         await pool.query(
@@ -1541,10 +1414,6 @@ app.get(
           [code]
         );
 
-      /* ===================================================
-         NOT FOUND
-      =================================================== */
-
       if (
         result.rowCount === 0
       ) {
@@ -1558,59 +1427,41 @@ app.get(
       const row =
         result.rows[0];
 
-      /* ===================================================
-         RESPONSE
-      =================================================== */
-
       const order = {
         id:
           row.id,
-
         code:
           row.order_code,
-
         order_code:
           row.order_code,
-
         service:
           row.service_name,
-
         service_name:
           row.service_name,
-
         serviceCode:
           row.service_code,
-
         service_code:
           row.service_code,
-
         network:
           row.network,
-
         network_name:
           row.network,
-
         quantity:
           Number(
             row.quantity || 0
           ),
-
         amount:
           Number(
             row.amount || 0
           ),
-
         total_price:
           Number(
             row.total_price || 0
           ),
-
         status:
           row.status || "pending",
-
         createdAt:
           row.created_at,
-
         created_at:
           row.created_at
       };
@@ -1619,7 +1470,6 @@ app.get(
         success: true,
         order
       });
-
     } catch (error) {
       console.error(
         "Tracking error:",
@@ -1650,7 +1500,7 @@ app.use(
 );
 
 /* =========================================================
-   GLOBAL ERROR HANDLER
+   GLOBAL ERROR
 ========================================================= */
 
 app.use(
@@ -1704,7 +1554,6 @@ async function startServer() {
         );
       }
     );
-
   } catch (error) {
     console.error(
       "Server could not start because database initialization failed."
